@@ -13,11 +13,11 @@ ingress:
       cert-manager.io/cluster-issuer: letsencrypt
       traefik.ingress.kubernetes.io/router.middlewares: default-redirect-https@kubernetescrd
 pms:
-    configStorage: 20Gi
+    configExistingClaim: "plex-media-server-pvc"
 extraEnv:
     # This claim is optional, and is only used for the first startup of PMS
     # The claim is obtained from https://www.plex.tv/claim/ is only valid for a few minutes
-    PLEX_CLAIM: "claim-3i8fzzo7x8VQQ43KcDkR"
+    PLEX_CLAIM: "claim-ZWWuecR9jBUKqVrVBsch"
 
 rclone:
   enabled: true
