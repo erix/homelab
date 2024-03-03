@@ -17,7 +17,7 @@ pms:
 extraEnv:
     # This claim is optional, and is only used for the first startup of PMS
     # The claim is obtained from https://www.plex.tv/claim/ is only valid for a few minutes
-    PLEX_CLAIM: "claim-ZWWuecR9jBUKqVrVBsch"
+    PLEX_CLAIM: "claim-8cQASygriPeYvv2kdLMb"
 
 rclone:
   enabled: true
