@@ -1,0 +1,25 @@
+# README:
+# https://www.plex.tv/blog/plex-pro-week-23-a-z-on-k8s-for-plex-media-server/
+# https://github.com/plexinc/pms-docker/blob/master/charts/plex-media-server/values.yaml
+image:
+  registry: "lscr.io"
+  repository: "linuxserver/plex"
+ingress:
+    enabled: true
+    # note put a domain name that points to your ip address here
+    url: https://plex.erix-homelab.site
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      traefik.ingress.kubernetes.io/router.middlewares: default-redirect-https@kubernetescrd
+pms:
+    configStorage: 20Gi
+
+rclone:
+  enabled: true
+  image:
+    repository: "itstoggle/rclone_rd" 
+    tag: "latest"
+  configSecret: "rd-rclone-config"
+  remotes:
+    - "realdebrid:"

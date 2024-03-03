@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+spec:
+  sources:
+  - repoURL: 'https://raw.githubusercontent.com/plexinc/pms-docker/gh-pages'
+    chart: plex-media-server
+    targetRevision: 15.7.1
+    helm:
+      valueFiles:
+      - $values/charts/prometheus/values.yaml
+  - repoURL: 'git@github.com:erix/homelab.git'
+    targetRevision: main
+    path: plex
+    ref: values
