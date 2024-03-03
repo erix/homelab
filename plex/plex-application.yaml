@@ -1,14 +1,20 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
+metadata:
+  name: plex-media-server
+  namespace: argocd
 spec:
+  project: default
   sources:
   - repoURL: 'https://raw.githubusercontent.com/plexinc/pms-docker/gh-pages'
     chart: plex-media-server
-    targetRevision: 15.7.1
+    targetRevision: 0.2.1
     helm:
       valueFiles:
-      - $values/charts/prometheus/values.yaml
-  - repoURL: 'git@github.com:erix/homelab.git'
+      - $values/plex/values.yaml
+  - repoURL: 'https://github.com/erix/homelab.git'
     targetRevision: main
-    path: plex
     ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default

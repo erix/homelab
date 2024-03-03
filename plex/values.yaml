@@ -14,6 +14,10 @@ ingress:
       traefik.ingress.kubernetes.io/router.middlewares: default-redirect-https@kubernetescrd
 pms:
     configStorage: 20Gi
+extraEnv:
+    # This claim is optional, and is only used for the first startup of PMS
+    # The claim is obtained from https://www.plex.tv/claim/ is only valid for a few minutes
+    PLEX_CLAIM: "claim-3i8fzzo7x8VQQ43KcDkR"
 
 rclone:
   enabled: true
