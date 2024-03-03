@@ -14,6 +14,7 @@ spec:
       - $values/plex/values.yaml
   - repoURL: 'https://github.com/erix/homelab.git'
     targetRevision: main
+    path: plex
     ref: values
   destination:
     server: https://kubernetes.default.svc
