@@ -1,29 +1,30 @@
 # README:
 # https://www.plex.tv/blog/plex-pro-week-23-a-z-on-k8s-for-plex-media-server/
 # https://github.com/plexinc/pms-docker/blob/master/charts/plex-media-server/values.yaml
-image:
-  registry: "lscr.io"
-  repository: "linuxserver/plex"
-ingress:
-    enabled: true
-    # note put a domain name that points to your ip address here
-    url: https://plex.erix-homelab.site
-    ingressClassName: traefik
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
-      traefik.ingress.kubernetes.io/router.middlewares: default-redirect-https@kubernetescrd
-pms:
-    configExistingClaim: "plex-media-server-pvc"
-extraEnv:
-    # This claim is optional, and is only used for the first startup of PMS
-    # The claim is obtained from https://www.plex.tv/claim/ is only valid for a few minutes
-    PLEX_CLAIM: "claim-8cQASygriPeYvv2kdLMb"
-
-rclone:
-  enabled: true
+plex-media-server:
   image:
-    repository: "itstoggle/rclone_rd" 
-    tag: "latest"
-  configSecret: "rd-rclone-config"
-  remotes:
-    - "realdebrid:"
+    registry: "lscr.io"
+    repository: "linuxserver/plex"
+  ingress:
+      enabled: true
+      # note put a domain name that points to your ip address here
+      url: https://plex.erix-homelab.site
+      ingressClassName: traefik
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.middlewares: default-redirect-https@kubernetescrd
+  pms:
+      configExistingClaim: "plex-media-server-pvc"
+  extraEnv:
+      # This claim is optional, and is only used for the first startup of PMS
+      # The claim is obtained from https://www.plex.tv/claim/ is only valid for a few minutes
+      PLEX_CLAIM: "claim-8cQASygriPeYvv2kdLMb"
+
+  rclone:
+    enabled: true
+    image:
+      repository: "itstoggle/rclone_rd" 
+      tag: "latest"
+    configSecret: "rd-rclone-config"
+    remotes:
+      - "realdebrid:"
