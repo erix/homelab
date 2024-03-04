@@ -5,17 +5,10 @@ metadata:
   namespace: argocd
 spec:
   project: default
-  sources:
-  - repoURL: 'https://raw.githubusercontent.com/plexinc/pms-docker/gh-pages'
-    chart: plex-media-server
-    targetRevision: 0.2.1
-    helm:
-      valueFiles:
-      - $values/plex/values.yaml
-  - repoURL: 'https://github.com/erix/homelab.git'
-    targetRevision: main
+  source:
+    repoURL: 'https://github.com/erix/homelab.git'
+    targetRevision: HEAD
     path: plex
-    ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: default
