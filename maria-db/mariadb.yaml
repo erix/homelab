@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      containers:
+      - name: mariadb
+        image: linuxserver/mariadb:latest
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-password
+              key: rootPassword
+        - name: TZ
+          value: "Europe/London"
+        - name: MYSQL_DATABASE
+          value: "mariatest" #optional
+        - name: MYSQL_USER
+          value: "mariadb" #optional
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mariadb-password
+              key: dbPassword
+        ports:
+        - name: tcp-01
+          containerPort: 3306
+        volumeMounts:
+          - name : mariadb-storage
+            mountPath: /config
+      restartPolicy: Always
+      volumes:
+        - name: mariadb-storage
+          persistentVolumeClaim:
+            claimName: mariadb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+spec:
+  ports:
+  - name: tcp-01
+    port: 3306
+    protocol: TCP
+    targetPort: 3306
+  selector:
+    app: mariadb
+  type: LoadBalancer
+

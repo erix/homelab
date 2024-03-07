@@ -10,3 +10,6 @@
 *.un~
 Session.vim
 .netrwhist
+
+# ignore secret files
+*secret*.yaml
