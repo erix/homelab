@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
       - name: mariadb
-        image: linuxserver/mariadb:latest
+        image: linuxserver/mariadb:10.11.6
+        imagePullPolicy: IfNotPresent
         env:
         - name: PUID
           value: "1000"
