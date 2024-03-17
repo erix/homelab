@@ -33,7 +33,7 @@ spec:
       volumes:
         - name: config-volume
           secret:
-            name: zurg-config
+            secretName: zurg-config
             items:
             - key: config.yml
               path: config.yml
