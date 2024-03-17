@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zurg
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zurg
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: zurg
+    spec:
+      containers:
+        - image: ghcr.io/debridmediamanager/zurg-testing:latest
+          name: zurg
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9999
+              hostPort: 9999
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /app/data
+              name: zurg-data
+            - name: config-volume
+              mountPath: /app/config.yml
+              subPath: config.yml
+              readOnly: true
+      restartPolicy: Always
+      volumes:
+        - name: config-volume
+          secret:
+            name: zurg-config
+            items:
+            - key: config.yml
+              path: config.yml
+        - name: zurg-data
+          persistentVolumeClaim:
+            claimName: zurg-pvc

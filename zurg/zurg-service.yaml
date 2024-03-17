@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zurg
+spec:
+  ports:
+    - name: "webdav"
+      port: 9999
+      targetPort: 9999
+  selector:
+    app: zurg
+  type: LoadBalancer
