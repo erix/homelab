@@ -21,7 +21,7 @@ plex-media-server:
       PLEX_CLAIM: "claim-8cQASygriPeYvv2kdLMb"
 
   rclone:
-    enabled: true
+    enabled: false
     image:
       repository: "itstoggle/rclone_rd" 
       tag: "latest"
