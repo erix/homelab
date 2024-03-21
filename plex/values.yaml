@@ -28,3 +28,19 @@ plex-media-server:
     configSecret: "rd-rclone-config"
     remotes:
       - "realdebrid:"
+
+  extraVolumeMounts:
+  - name: symlinks-volume
+    mountPath: /media 
+  - mountPath: "/mnt/zurg/"
+    name: zurg-volume
+
+  extraVolumes:
+  - name: symlinks-volume
+    persistentVolumeClaim:
+      claimName: symlinks-pvc
+  - name: zurg-volume
+    hostPath:
+      path: /mnt/zurg/
+      # Optional: specify the type of the hostPath. Use "DirectoryOrCreate" if you want the directory to be created if it does not already exist.
+      type: Directory
