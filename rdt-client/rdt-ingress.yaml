@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rdtclient-ingress
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: rdt.erix-homelab.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rdtclient-service
+                port:
+                  number: 6500
+  tls:
+    - hosts:
+        - rdt.erix-homelab.site
+      secretName: erix-homelab-site-tls
