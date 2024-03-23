@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: radarr-ingress
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: radarr.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: radarr-service
+            port:
+              number: 8989
+  tls:
+    - secretName: erix-homelab-site-tls
+      hosts:
+        - radarr.erix-homelab.site

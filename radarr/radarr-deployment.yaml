@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: radarr
+  labels:
+    app: radarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: radarr
+  template:
+    metadata:
+      labels:
+        app: radarr
+    spec:
+      containers:
+      - name: radarr
+        image: linuxserver/radarr
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 7878
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ 
+          value: "Etc/UTC"
+        volumeMounts:
+        - name: radarr-data
+          mountPath: /config
+        - name: symlinks-volume
+          mountPath: /download
+        - mountPath: "/mnt/zurg/"
+          name: zurg-volume
+      volumes:
+      - name: radarr-data
+        persistentVolumeClaim:
+          claimName: radarr-pvc
+      - name: symlinks-volume
+        persistentVolumeClaim:
+          claimName: symlinks-pvc
+      - name: zurg-volume
+        hostPath:
+          path: /mnt/zurg/
+          # Optional: specify the type of the hostPath. Use "DirectoryOrCreate" if you want the directory to be created if it does not already exist.
+          type: Directory
