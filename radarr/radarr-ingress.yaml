@@ -14,7 +14,7 @@ spec:
           service:
             name: radarr-service
             port:
-              number: 8989
+              number: 7878
   tls:
     - secretName: erix-homelab-site-tls
       hosts:
