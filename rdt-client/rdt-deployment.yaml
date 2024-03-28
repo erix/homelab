@@ -17,6 +17,7 @@ spec:
       containers:
       - name: rdtclient
         image: erix12/rdt-client:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 6500
         env:
