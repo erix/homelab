@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: rdtclient
-        image: erix12/rdtclient:latest
+        image: erix12/rdt-client:latest
         ports:
         - containerPort: 6500
         env:
