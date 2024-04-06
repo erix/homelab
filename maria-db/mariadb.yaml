@@ -62,7 +62,5 @@ spec:
     port: 3306
   selector:
     app: mariadb
-  clusterIP: None
-  externalIPs: 
-    - 192.168.11.20
-
+  type: LoadBalancer
+  loadBalancerIP: 192.168.11.203
