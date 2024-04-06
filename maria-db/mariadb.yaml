@@ -1,8 +1,9 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
-  name: mariadb
+  name: mariadb-sts
 spec:
+  serviceName: "mariadb-service"
   replicas: 1
   selector:
     matchLabels:
@@ -38,7 +39,7 @@ spec:
               name: mariadb-password
               key: dbPassword
         ports:
-        - name: tcp-01
+        - name: mariadb-port
           containerPort: 3306
         volumeMounts:
           - name : mariadb-storage
@@ -52,14 +53,14 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mariadb
+  name: mariadb-service
+  labels:
+    app: mariadb
 spec:
   ports:
-  - name: tcp-01
+  - name: mariadb-port
     port: 3306
-    protocol: TCP
-    targetPort: 3306
   selector:
     app: mariadb
-  type: LoadBalancer
+  clusterIP: None
 
