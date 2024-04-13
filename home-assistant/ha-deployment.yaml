@@ -19,6 +19,8 @@ spec:
       - name: homeassistant
         image: homeassistant/home-assistant:2024.4
         imagePullPolicy: IfNotPresent
+        strategy:
+          type: Recreate
         ports:
           - containerPort: 8123
         resources: {}
