@@ -14,7 +14,7 @@ spec:
         app: mariadb
     spec:
       nodeSelector:
-        hostname: homelab-02
+        kubernetes.io/hostname: homelab-02
       containers:
       - name: mariadb
         image: linuxserver/mariadb:10.11.6
