@@ -9,6 +9,8 @@ spec:
   selector:
     matchLabels:
       app: rdtclient
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -26,16 +28,16 @@ spec:
         - name: PGID
           value: "1000"
         volumeMounts:
-        - mountPath: "/data/downloads"
+        - mountPath: "/media"
           name: symlinks-volume
         - mountPath: "/data/db"
           name: rdt-data
-        - mountPath: "/mnt/zurg/"
+        - mountPath: "/downloads"
           name: host-volume
       volumes:
       - name: symlinks-volume
         persistentVolumeClaim:
-          claimName: symlinks-pvc
+          claimName: pvc-media-nfs
       - name: rdt-data
         persistentVolumeClaim:
           claimName: rdt-pvc

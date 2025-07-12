@@ -9,4 +9,13 @@ spec:
   - name: homeassistant
     port: 8123
     targetPort: 8123
+  # - name: filebrowser
+  #   port: 8080
+  #   targetPort: 80
+  - name: netbios-ssn
+    port: 139
+    targetPort: 139
+  - name: microsoft-ds
+    port: 445
+    targetPort: 445
   type: LoadBalancer

@@ -17,16 +17,50 @@ spec:
       #   kubernetes.io/hostname: homelab-03
       containers:
       - name: homeassistant
-        image: homeassistant/home-assistant:2024.4
+        image: homeassistant/home-assistant:2025.6
         imagePullPolicy: IfNotPresent
-        strategy:
-          type: Recreate
         ports:
           - containerPort: 8123
         resources: {}
         volumeMounts:
           - mountPath: /config
             name: homeassistant-pv-config
+      # - name: filebrowser
+      #   image: filebrowser/filebrowser:latest
+      #   ports:
+      #     - containerPort: 80
+      #       name: filebrowser
+      #   volumeMounts:
+      #     - mountPath: /srv
+      #       name: homeassistant-pv-config
+      #   args:
+      #     - --root=/srv
+      #     - --address=0.0.0.0
+      #     - --port=80
+      #     - --noauth
+      - name: samba
+        image: dperson/samba:latest
+        ports:
+          - containerPort: 139
+            name: netbios-ssn
+          - containerPort: 445
+            name: microsoft-ds
+        volumeMounts:
+          - mountPath: /share
+            name: homeassistant-pv-config
+        env:
+          - name: TZ
+            value: "Europe/Bratislava"
+          - name: USERID
+            value: "1000"
+          - name: GROUPID
+            value: "1000"
+        command: ["/usr/bin/samba.sh"]
+        args:
+          - -s
+          - "homeassistant;/share;yes;no;yes;all;none"
+          - -p
+          - -n
           # - mountPath: /etc/localtime
           #   name: homeassistant-pv-time
           #   readOnly: true

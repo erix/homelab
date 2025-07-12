@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: mariadb-sts
+  name: mariadb
 spec:
   serviceName: "mariadb-service"
   replicas: 1
@@ -13,8 +13,20 @@ spec:
       labels:
         app: mariadb
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: homelab-02
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                - database
+      tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "database"
+        effect: "NoSchedule"
       containers:
       - name: mariadb
         image: linuxserver/mariadb:10.11.6

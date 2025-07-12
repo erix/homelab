@@ -9,6 +9,8 @@ spec:
   selector:
     matchLabels:
       app: radarr
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -31,8 +33,8 @@ spec:
         - name: radarr-data
           mountPath: /config
         - name: symlinks-volume
-          mountPath: /download
-        - mountPath: "/mnt/zurg/"
+          mountPath: /media
+        - mountPath: "/downloads/zurg"
           name: zurg-volume
       volumes:
       - name: radarr-data
@@ -40,7 +42,7 @@ spec:
           claimName: radarr-pvc
       - name: symlinks-volume
         persistentVolumeClaim:
-          claimName: symlinks-pvc
+          claimName: pvc-media-nfs
       - name: zurg-volume
         hostPath:
           path: /mnt/zurg/

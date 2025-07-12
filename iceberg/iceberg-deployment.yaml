@@ -17,6 +17,7 @@ spec:
       containers:
       - name: iceberg
         image: spoked/iceberg:latest
+        imagePullPolicy: IfNotPresent
         env:
         - name: PUID
           value: "1000"
@@ -29,7 +30,17 @@ spec:
         volumeMounts:
         - name: data-volume
           mountPath: /iceberg/data
+        - name: symlinks-volume
+          mountPath: /mnt/symlinks
+        - mountPath: /mnt/zurg
+          name: zurg-volume
       volumes:
       - name: data-volume
         persistentVolumeClaim:
           claimName: iceberg-pvc
+      - name: symlinks-volume
+        persistentVolumeClaim:
+          claimName: symlinks-pvc
+      - name: zurg-volume
+        hostPath:
+          path: /mnt/zurg

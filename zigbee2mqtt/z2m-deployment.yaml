@@ -17,7 +17,7 @@ spec:
         kubernetes.io/hostname: homelab-03
       containers:
       - name: z2m
-        image: koenkk/zigbee2mqtt:latest
+        image: koenkk/zigbee2mqtt:2.0.0 
         imagePullPolicy: IfNotPresent
         env:
           - name: TZ
@@ -28,8 +28,6 @@ spec:
             value: "z2m"
           - name: ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD
             value: "password"
-          - name: ZIGBEE2MQTT_CONFIG_HOMEASSISTANT
-            value: "true"
         securityContext:
           privileged: true
         ports:

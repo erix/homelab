@@ -9,6 +9,8 @@ spec:
   selector:
     matchLabels:
       app: sonarr
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
@@ -29,8 +31,8 @@ spec:
         - name: sonarr-data
           mountPath: /config
         - name: symlinks-volume
-          mountPath: /download
-        - mountPath: "/mnt/zurg/"
+          mountPath: /media
+        - mountPath: "/downloads/zurg"
           name: zurg-volume
       volumes:
       - name: sonarr-data
@@ -38,7 +40,7 @@ spec:
           claimName: sonarr-pvc
       - name: symlinks-volume
         persistentVolumeClaim:
-          claimName: symlinks-pvc
+          claimName: pvc-media-nfs
       - name: zurg-volume
         hostPath:
           path: /mnt/zurg/
