@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filebot
+  labels:
+    app: filebot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: filebot
+  template:
+    metadata:
+      labels:
+        app: filebot
+    spec:
+      containers:
+      - name: filebot
+        image: jlesage/filebot
+        ports:
+        - containerPort: 5800
+        env:
+        - name: FILEBOT_GUI
+          value: "0"
+        - name: AMC_INTERVAL
+          value: "60"
+        - name: AMC_ACTION
+          value: move
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: symlinks
+          mountPath: /output
+          subPath: media
+        - name: symlinks
+          mountPath: /watch
+          subPath: completed
+        - mountPath: "/mnt/zurg/"
+          name: host-volume
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: filebot-pvc
+      - name: symlinks
+        persistentVolumeClaim:
+          claimName: symlinks-pvc
+      - name: host-volume
+        hostPath:
+          path: /mnt/zurg/
+          # Optional: specify the type of the hostPath. Use "DirectoryOrCreate" if you want the directory to be created if it does not already exist.
+          type: Directory
+      # - name: watch
+      #   hostPath:
+      #     path: /mnt/zurg/__all__
+      #     type: Directory
