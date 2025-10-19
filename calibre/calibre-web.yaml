@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calibre-web
+  labels:
+    app: calibre-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calibre-web
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: calibre-web
+    spec:
+      containers:
+      - name: calibre-web
+        image: linuxserver/calibre-web
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8083
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ 
+          value: "Europe/Berlin"
+        volumeMounts:
+        - name: calibre-web-config
+          mountPath: /config
+        - mountPath: /books
+          name: books
+      volumes:
+      - name: calibre-web-config
+        persistentVolumeClaim:
+          claimName: calibre-web-pvc
+      - name: books 
+        persistentVolumeClaim:
+          claimName: pvc-books-nfs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calibre-web-service
+  labels:
+    app: calibre-web
+spec:
+  selector:
+    app: calibre-web
+  ports:
+    - protocol: TCP
+      port: 8083
+      targetPort: 8083
+      name: calibre-web-ui
+  type: LoadBalancer
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: calibre-web-ingress
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: books.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: calibre-web-service
+            port:
+              number: 8083
+  tls:
+    - secretName: erix-homelab-site-tls
+      hosts:
+        - books.erix-homelab.site

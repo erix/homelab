@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calibre
+  labels:
+    app: calibre
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calibre
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: calibre
+    spec:
+      containers:
+      - name: calibre
+        image: linuxserver/calibre:7.23.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        - containerPort: 8181
+        - containerPort: 8081
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ 
+          value: "Europe/Berlin"
+        volumeMounts:
+        - name: calibre-config
+          mountPath: /config
+        - mountPath: /Calibre_Library
+          name: books
+      volumes:
+      - name: calibre-config
+        persistentVolumeClaim:
+          claimName: calibre-pvc
+      - name: books 
+        persistentVolumeClaim:
+          claimName: pvc-books-nfs

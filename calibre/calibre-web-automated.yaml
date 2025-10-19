@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calibre-web-automated
+  labels:
+    app: calibre-web-automated
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: calibre-web-automated
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: calibre-web-automated
+    spec:
+      containers:
+      - name: calibre-web-automated
+        image: crocodilestick/calibre-web-automated:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8083
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ 
+          value: "Europe/Berlin"
+        volumeMounts:
+        - name: calibre-web-automated-config
+          mountPath: /config
+        - name: books
+          mountPath: /calibre-library
+        - name: ingest
+          mountPath: /cwa-book-ingest
+      volumes:
+      - name: calibre-web-automated-config
+        persistentVolumeClaim:
+          claimName: calibre-web-automated-pvc
+      - name: books 
+        persistentVolumeClaim:
+          claimName: pvc-books-nfs
+      - name: ingest
+        persistentVolumeClaim:
+          claimName: calibre-ingest-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calibre-web-automated-service
+  labels:
+    app: calibre-web-automated
+spec:
+  selector:
+    app: calibre-web-automated
+  ports:
+    - protocol: TCP
+      port: 8083
+      targetPort: 8083
+      name: calibre-web-automated-ui
+  type: LoadBalancer
+  loadBalancerIP: 192.168.11.211
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: calibre-web-automated-ingress
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: books-automated.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: calibre-web-automated-service
+            port:
+              number: 8083
+  tls:
+    - secretName: erix-homelab-site-tls
+      hosts:
+        - books-automated.erix-homelab.site
