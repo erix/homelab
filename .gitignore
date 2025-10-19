@@ -27,3 +27,6 @@ Session.vim
 # Environment files
 .env
 *.env
+
+# Private applications
+algo-trader/
