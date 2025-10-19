@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mariadb
+  namespace: home-automation
 spec:
   serviceName: "mariadb-service"
   replicas: 1
@@ -68,8 +69,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mariadb-service
+  namespace: home-automation
   labels:
     app: mariadb
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.11.203
 spec:
   ports:
   - name: mariadb-port
@@ -77,4 +81,3 @@ spec:
   selector:
     app: mariadb
   type: LoadBalancer
-  loadBalancerIP: 192.168.11.203

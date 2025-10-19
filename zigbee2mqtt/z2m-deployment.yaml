@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: z2m
-  # namespace: homeassistant
+  namespace: home-automation
 spec:
   replicas: 1
   selector:
@@ -23,7 +23,7 @@ spec:
           - name: TZ
             value: Europe/London
           - name: ZIGBEE2MQTT_CONFIG_MQTT_SERVER
-            value: "mqtt://mosquitto-service.default.svc.cluster.local:8883"
+            value: "mqtt://mosquitto-service.home-automation.svc.cluster.local:8883"
           - name: ZIGBEE2MQTT_CONFIG_MQTT_USER
             value: "z2m"
           - name: ZIGBEE2MQTT_CONFIG_MQTT_PASSWORD

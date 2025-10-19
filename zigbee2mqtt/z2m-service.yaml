@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: z2m-service
-  # namespace: homeassistant
+  namespace: home-automation
   labels:
     app: z2m
 spec:
