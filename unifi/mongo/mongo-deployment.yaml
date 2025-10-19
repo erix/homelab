@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role
+                operator: In
+                values:
+                - database
+      tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "database"
+        effect: "NoSchedule"
+      containers:
+      - name: mongodb
+        image: mongo:3.6
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongodb-pvc
+          mountPath: /data/db
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d/init-mongo.js
+          subPath: init-mongo.js  # Adjust if necessary
+      volumes:
+      - name: init-script
+        configMap:
+          name: mongodb-init-script
+      - name: mongodb-pvc
+        persistentVolumeClaim:
+          claimName: mongodb-pvc
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: mongodb-pvc
+  #     spec:
+  #       accessModes: [ "ReadWriteOnce" ]
+  #       storageClassName: "longhorn-db-storage"
+  #       resources:
+  #         requests:
+  #           storage: 10Gi

@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: unifi
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt 
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - unifi.erix-homelab.site
+    secretName: unifi-tls
+  rules:
+  - host: 'unifi.erix-homelab.site'
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service: 
+            name: unifi 
+            port:
+              number: 8443 
