@@ -1,0 +1,8 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: longhorn-static
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+parameters:
+  staleReplicaTimeout: "30" # 30 minutes
