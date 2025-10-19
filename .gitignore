@@ -11,5 +11,19 @@
 Session.vim
 .netrwhist
 
-# ignore secret files
-*secret*.yaml
+# Ignore plain text secrets (DO NOT COMMIT)
+*-secret.yaml
+*-secret.yml
+*secret.yaml
+
+# Allow sealed secrets (encrypted, safe to commit)
+!*-sealed.yaml
+!*-sealed.yml
+
+# Backup files
+*-old.yaml
+*-backup.yaml
+
+# Environment files
+.env
+*.env

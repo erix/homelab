@@ -1,0 +1,15 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: erix-homelab-site
+  namespace: default
+spec:
+  secretName: erix-homelab-site-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  commonName: "*.erix-homelab.site"
+  dnsNames:
+  - "erix-homelab.site"
+  - "*.erix-homelab.site"
