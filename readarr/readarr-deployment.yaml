@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: readarr
+  labels:
+    app: readarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: readarr
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: readarr
+    spec:
+      containers:
+      - name: readarr
+        image: lscr.io/linuxserver/readarr:develop
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8787
+        env:
+        - name: PGID
+          value: "1000"
+        - name: PUID
+          value: "1000"
+        - name: TZ 
+          value: "Europe/Berlin"
+        volumeMounts:
+        - name: readarr-data
+          mountPath: /config
+        - mountPath: "/downloads"
+          name: downloads
+        - mountPath: "/books"
+          name: books
+      volumes:
+      - name: readarr-data
+        persistentVolumeClaim:
+          claimName: readarr-pvc
+      - name: downloads 
+        persistentVolumeClaim:
+          claimName: pvc-downloads-nfs
+      - name: books 
+        persistentVolumeClaim:
+          claimName: pvc-books-nfs
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: readarr-service
+  labels:
+    app: readarr
+spec:
+  selector:
+    app: readarr
+  ports:
+  - protocol: TCP
+    port: 8787
+    targetPort: 8787
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: readarr-ingress
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: readarr.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: readarr-service
+            port:
+              number: 8787
+  tls:
+    - secretName: erix-homelab-site-tls
+      hosts:
+        - readarr.erix-homelab.site
