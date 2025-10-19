@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: plex-trakt-sync
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - name: plex-trakt-sync
+        image: ghcr.io/taxel/plextraktsync
+        imagePullPolicy: IfNotPresent
+        command: ["plextraktsync", "sync"]
+        stdin: true
+        tty: true
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+      restartPolicy: Never
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: plex-trakt-sync-pvc
+  backoffLimit: 4
+

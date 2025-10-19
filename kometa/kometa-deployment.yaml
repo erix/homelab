@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kometa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kometa
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: kometa
+    spec:
+      initContainers:
+        - name: init-config
+          image: busybox
+          command: ['sh', '-c', 'cp /config/config.yml /config-writable/config.yml']
+          volumeMounts:
+            - name: config-file
+              mountPath: /config
+            - name: pvc-storage
+              mountPath: /config-writable
+      containers:
+        - name: kometa
+          image: lscr.io/linuxserver/kometa:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Etc/UTC"
+            - name: KOMETA_CONFIG
+              value: "/config/config.yml"
+            - name: KOMETA_TIME
+              value: "03:00"
+            - name: KOMETA_RUN
+              value: "False"
+            - name: KOMETA_TEST
+              value: "False"
+            - name: KOMETA_NO_MISSING
+              value: "False"
+          volumeMounts:
+            - name: pvc-storage
+              mountPath: /config
+              subPath: ""
+      volumes:
+        - name: config-file
+          configMap:
+            name: kometa-config
+            items:
+              - key: config.yml
+                path: config.yml
+        - name: pvc-storage
+          persistentVolumeClaim:
+            claimName: kometa-pvc

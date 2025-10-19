@@ -1,0 +1,187 @@
+# Create the ConfigMap 1st:
+# kubectl create configmap kometa-config --from-file=config.yml
+
+libraries:                           # This is called out once within the config.yml file
+  Movies:                            # These are names of libraries in your Plex
+    remove_overlays: false           # Set this to true to remove all overlays
+    collection_files:
+      - default: trakt                  # This is a file within Kometa's defaults folder
+        template_variables:
+          use_collected: false
+          use_watched: false
+      - default: basic                 # This is a file within Kometa's defaults folder
+      - default: imdb                  # This is a file within Kometa's defaults folder
+      - default: franchise
+      - default: audio_language
+        template_variables: 
+          include:
+            - hu
+      - default: director
+        template_variables: 
+          include:
+            - Woody Allen
+            - Quentin Tarantino
+            - Christopher Nolan
+            - Martin Scorsese
+      - default: collectionless
+    # overlay_files:
+    #   - default: ribbon                # This is a file within Kometa's defaults folder
+    #   - default: resolution                # This is a file within Kometa's defaults folder
+    operations:
+      mass_user_rating_update: imdb
+      delete_collections:
+        configured: false
+        managed: true
+  TV Shows:
+    remove_overlays: false           # Set this to true to remove all overlays
+    collection_files:
+      - default: basic                 # This is a file within Kometa's defaults folder
+      - default: imdb                  # This is a file within Kometa's defaults folder
+    # overlay_files:
+    #   - default: ribbon                # This is a file within Kometa's defaults folder
+playlist_files:
+  - default: playlist                  # This is a file within Kometa's defaults folder
+    template_variables:
+      libraries: Movies, TV Shows      # list of libraries that you want the Kometa Defaults playlists to look at
+  # see the wiki for how to use local files, folders, URLs, or files from git
+settings:
+  run_order:
+    - operations
+    - metadata
+    - collections
+    - overlays
+  cache: true
+  cache_expiration: 60
+  asset_directory: config/assets
+  asset_folders: true
+  asset_depth: 0
+  create_asset_folders: false
+  prioritize_assets: false
+  dimensional_asset_rename: false
+  download_url_assets: false
+  show_missing_season_assets: false
+  show_missing_episode_assets: false
+  show_asset_not_needed: true
+  sync_mode: append
+  minimum_items: 1
+  default_collection_order:
+  delete_below_minimum: true
+  delete_not_scheduled: false
+  run_again_delay: 2
+  missing_only_released: false
+  only_filter_missing: false
+  show_unmanaged: true
+  show_unconfigured: true
+  show_filtered: false
+  show_options: true
+  show_missing: true
+  show_missing_assets: true
+  save_report: false
+  tvdb_language: eng
+  ignore_ids:
+  ignore_imdb_ids:
+  item_refresh_delay: 0
+  playlist_sync_to_users: all
+  playlist_exclude_users:
+  playlist_report: false
+  verify_ssl: true
+  custom_repo:
+  overlay_artwork_filetype: jpg
+  overlay_artwork_quality:
+webhooks:                            # Can be individually specified per library as well
+  error: notifiarr
+  version: notifiarr
+  run_start: notifiarr
+  run_end: notifiarr
+  changes: notifiarr
+  delete: notifiarr
+plex:                                # Can be individually specified per library as well; REQUIRED for the script to run
+  url: http://192.168.1.179:32400
+  token: 9CJobASotNusVAWsoWQH
+  timeout: 60
+  db_cache:
+  clean_bundles: false
+  empty_trash: false
+  optimize: false
+  verify_ssl:
+tmdb:                                # REQUIRED for the script to run
+  apikey: a6e891c31106f748ea79d10dd2f13ade
+  language: en
+  cache_expiration: 60
+  region:
+mdblist:
+ apikey: 0nbs62rree2qisl4kgal3bukj
+ cache_expiration: 60
+trakt:
+  client_id: 83c06241f3416178c50f686eaac63e363073089b4046432ad7a0d21835f4171a
+  client_secret: 1cd886e3485eeadfe41b0c7ada4f86bf459818730a0af4e5762fa9aec03a3554
+  authorization:
+    access_token: 879ce898b6e84eeaef1ba0a044537b55f745e192ce16282e19a572bb0636cb2e
+    token_type: Bearer
+    expires_in: 7889238
+    refresh_token: 3ed652d4de9874f4738175436a7a07227825c38d4d6d95c7060c2bf56875be93
+    scope: public
+    created_at: 1714750505
+  pin:
+notifiarr:
+  apikey: 2690df28-a37c-4212-b7f3-44095bb1bfe9
+#tautulli:                            # Can be individually specified per library as well
+#  url: http://192.168.1.12:8181
+#  apikey: ################################
+#github:
+#  token: ################################
+#omdb:
+#  apikey: ########
+#  cache_expiration: 60
+#gotify:
+#  url: http://192.168.1.12:80
+#  url: http://192.168.1.12:80
+#  token: ####################################
+#anidb:                               # Not required for AniDB builders unless you want mature content
+#  username: ######
+#  password: ######
+#  language: en
+#  client:
+#radarr:                              # Can be individually specified per library as well
+#  url: http://192.168.1.12:7878
+#  token: ################################
+#  add_missing: false
+#  add_existing: false
+#  upgrade_existing: false
+#  monitor_existing: false
+#  root_folder_path: S:/Movies
+#  monitor: true
+#  availability: announced
+#  quality_profile: HD-1080p
+#  tag:
+#  search: false
+#  radarr_path:
+#  plex_path:
+#  ignore_cache: false
+#sonarr:                              # Can be individually specified per library as well
+#  url: http://192.168.1.12:8989
+#  token: ################################
+#  add_missing: false
+#  add_existing: false
+#  upgrade_existing: false
+#  monitor_existing: false
+#  root_folder_path: S:/TV Shows
+#  monitor: all
+#  quality_profile: HD-1080p
+#  language_profile: English
+#  series_type: standard
+#  season_folder: true
+#  tag:
+#  search: false
+#  cutoff_search: false
+#  sonarr_path:
+#  plex_path:
+#  ignore_cache: false
+#mal:
+#  client_id: ####################
+#  client_secret: ####################
+#  authorization:
+    # everything below is autofilled by the script
+#    access_token:
+#    token_type:
+#    expires_in:
