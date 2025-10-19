@@ -1,0 +1,154 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: homelab-custom-alerts
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus
+spec:
+  groups:
+  - interval: 30s
+    name: homelab-node-health
+    rules:
+    - alert: HomelabNodeNotReady
+      annotations:
+        description: Node {{ $labels.node }} has been NotReady for 2+ minutes. This caused your recent outage!
+        summary: "🚨 Node {{ $labels.node }} is NOT READY"
+      expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+      for: 2m
+      labels:
+        component: kubernetes
+        severity: critical
+    - alert: HomelabNodeMemoryPressure
+      annotations:
+        description: High memory usage can lead to pod evictions and instability
+        summary: '⚠️  Node {{ $labels.instance }} memory usage: {{ $value | humanizePercentage }}'
+      expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.80
+      for: 5m
+      labels:
+        component: node
+        severity: warning
+    - alert: HomelabNodeMemoryCritical
+      annotations:
+        description: Memory exhaustion imminent! This can cause node failures.
+        summary: "🚨 Node {{ $labels.instance }} memory CRITICAL: {{ $value | humanizePercentage }}"
+      expr: (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 0.90
+      for: 2m
+      labels:
+        component: node
+        severity: critical
+    - alert: HomelabNodeCPUPressure
+      annotations:
+        description: Sustained high CPU can starve instance-managers
+        summary: '⚠️  Node {{ $labels.instance }} CPU: {{ $value | humanizePercentage }}'
+      expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.80
+      for: 10m
+      labels:
+        component: node
+        severity: warning
+    - alert: HomelabNodeHighPodCount
+      annotations:
+        description: High pod count (>25) increases resource contention. Consider rebalancing.
+        summary: '⚠️  Node {{ $labels.node }} has {{ $value }} pods'
+      expr: count(kube_pod_info{node=~"homelab-.*"}) by (node) > 25
+      for: 5m
+      labels:
+        component: kubernetes
+        severity: warning
+    - alert: HomelabNodeLoadAverageHigh
+      annotations:
+        description: Load average has been above 15 for 5+ minutes. This can cause severe slowdowns on RPi4 nodes.
+        summary: '⚠️  Node {{ $labels.instance }} load average HIGH: {{ $value }}'
+      expr: node_load5 > 15
+      for: 5m
+      labels:
+        component: node
+        severity: warning
+    - alert: HomelabNodeLoadAverageCritical
+      annotations:
+        description: Load average critically high (>25)! System may be unresponsive. Investigate immediately!
+        summary: '🚨 Node {{ $labels.instance }} load average CRITICAL: {{ $value }}'
+      expr: node_load5 > 25
+      for: 2m
+      labels:
+        component: node
+        severity: critical
+  - interval: 30s
+    name: homelab-longhorn-health
+    rules:
+    - alert: HomelabLonghornNodeDown
+      annotations:
+        description: Longhorn cannot access node {{ $labels.node }}. Volumes may fail to attach!
+        summary: "🚨 Longhorn node {{ $labels.node }} is DOWN"
+      expr: longhorn_node_status{condition="ready"} == 0
+      for: 2m
+      labels:
+        component: longhorn
+        severity: critical
+    - alert: HomelabLonghornVolumeDegraded
+      annotations:
+        description: Volume {{ $labels.volume }} is running with reduced redundancy
+        summary: ⚠️  Volume {{ $labels.volume }} is DEGRADED
+      expr: longhorn_volume_robustness == 2
+      for: 5m
+      labels:
+        component: longhorn
+        severity: warning
+    - alert: HomelabLonghornVolumeFaulted
+      annotations:
+        description: Volume {{ $labels.volume }} has failed! Data may be unavailable.
+        summary: "🚨 Volume {{ $labels.volume }} is FAULTED"
+      expr: longhorn_volume_robustness == 3
+      for: 1m
+      labels:
+        component: longhorn
+        severity: critical
+    - alert: HomelabLonghornDiskSpaceLow
+      annotations:
+        description: Low disk space can prevent replica creation
+        summary: ⚠️  Disk {{ $labels.disk }} on {{ $labels.node }} has {{ $value | humanizePercentage }} free
+      expr: (longhorn_disk_capacity_bytes - longhorn_disk_usage_bytes) / longhorn_disk_capacity_bytes < 0.20
+      for: 10m
+      labels:
+        component: longhorn
+        severity: warning
+    - alert: HomelabLonghornDiskSpaceCritical
+      annotations:
+        description: Critical disk space! Immediate action required.
+        summary: "🚨 Disk {{ $labels.disk }} on {{ $labels.node }} has only {{ $value | humanizePercentage }} free"
+      expr: (longhorn_disk_capacity_bytes - longhorn_disk_usage_bytes) / longhorn_disk_capacity_bytes < 0.10
+      for: 5m
+      labels:
+        component: longhorn
+        severity: critical
+    - alert: HomelabInstanceManagerHighCPU
+      annotations:
+        description: High CPU usage in instance manager (>800m). Monitor for potential issues.
+        summary: ⚠️  Instance manager on {{ $labels.node }} using {{ $value }}m CPU
+      expr: longhorn_instance_manager_cpu_usage_millicpu > 800
+      for: 5m
+      labels:
+        component: longhorn
+        severity: warning
+  - interval: 30s
+    name: homelab-pod-health
+    rules:
+    - alert: HomelabPodStuckCreating
+      annotations:
+        description: Pod has been creating for 10+ minutes. Usually indicates volume attachment issues.
+        summary: ⚠️  Pod {{ $labels.namespace }}/{{ $labels.pod }} stuck in ContainerCreating
+      expr: kube_pod_container_status_waiting_reason{reason="ContainerCreating"} > 0
+      for: 10m
+      labels:
+        component: kubernetes
+        severity: warning
+    - alert: HomelabPodRestartingFrequently
+      annotations:
+        description: Pod has high restart rate. Check logs for issues.
+        summary: ⚠️  Pod {{ $labels.namespace }}/{{ $labels.pod }} restarting frequently
+      expr: rate(kube_pod_container_status_restarts_total[15m]) > 0.1
+      for: 5m
+      labels:
+        component: kubernetes
+        severity: warning

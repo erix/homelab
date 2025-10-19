@@ -1,0 +1,30 @@
+---
+# Disable control plane components that don't exist in K3s
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeProxy:
+  enabled: false
+
+# Optional: Also disable etcd if you're getting alerts for it
+kubeEtcd:
+  enabled: false
+
+# Keep these enabled - they work fine in K3s
+kubelet:
+  enabled: true
+
+kubeApiServer:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+nodeExporter:
+  enabled: true
+
+coreDns:
+  enabled: true

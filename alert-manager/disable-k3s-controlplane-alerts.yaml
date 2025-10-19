@@ -1,0 +1,36 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: disable-k3s-controlplane-alerts
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  groups:
+  - name: k3s-overrides
+    interval: 30s
+    rules:
+    # Silence k3s control plane alerts (these components don't expose metrics in k3s)
+    - alert: KubeControllerManagerDown
+      expr: absent(up{job="kube-controller-manager"} == 1)
+      for: 999999h
+      labels:
+        severity: none
+      annotations:
+        summary: "Silenced for k3s"
+    
+    - alert: KubeSchedulerDown
+      expr: absent(up{job="kube-scheduler"} == 1)
+      for: 999999h
+      labels:
+        severity: none
+      annotations:
+        summary: "Silenced for k3s"
+    
+    - alert: KubeProxyDown
+      expr: absent(up{job="kube-proxy"} == 1)
+      for: 999999h
+      labels:
+        severity: none
+      annotations:
+        summary: "Silenced for k3s"

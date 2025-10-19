@@ -1,0 +1,43 @@
+---
+# This manifest creates a PrometheusRule that effectively disables
+# the control plane component alerts that don't apply to K3s
+# 
+# Apply with: kubectl apply -f k3s-disable-controlplane-alerts.yaml
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: k3s-controlplane-suppression
+  namespace: monitoring
+  labels:
+    app: kube-prometheus-stack
+    release: prometheus
+spec:
+  groups:
+  - name: k3s-controlplane-suppression
+    rules:
+    # These rules override/suppress the control plane alerts
+    # by creating alerts that never fire (expr: vector(0))
+    - alert: KubeControllerManagerDown
+      expr: vector(0)
+      labels:
+        severity: none
+      annotations:
+        description: This alert is disabled for K3s clusters
+        summary: K3s embeds controller-manager in the k3s server process
+    
+    - alert: KubeSchedulerDown
+      expr: vector(0)
+      labels:
+        severity: none
+      annotations:
+        description: This alert is disabled for K3s clusters
+        summary: K3s embeds scheduler in the k3s server process
+    
+    - alert: KubeProxyDown
+      expr: vector(0)
+      labels:
+        severity: none
+      annotations:
+        description: This alert is disabled for K3s clusters
+        summary: K3s uses kube-router instead of kube-proxy
