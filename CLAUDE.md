@@ -8,36 +8,73 @@ This is a K3s homelab repository containing Kubernetes manifests for various sel
 
 ### Repository Layout
 ```
-/Users/eriksimko/github/homelab/
-├── k3s/
-│   ├── apps/                # Main Kubernetes manifests directory
-│   ├── helm/               # Helm charts and common library
-│   │   ├── homelab-app/    # Standardized single-app chart
-│   │   ├── homelab-common/ # Library chart for shared templates
-│   │   └── home-assistant-stack/ # Multi-component stack chart
-│   ├── ansible/            # Ansible inventory for cluster management
-│   └── metallb_logs.sh     # MetalLB troubleshooting script
-└── rdt-client/
-    └── build-docker.sh     # Docker build script for ARM64
+/Users/eriksimko/github/homelab/k3s/apps/
+├── apps/                            # Consumer applications
+│   ├── calibre/                    # E-book management
+│   ├── filebot/                    # Media file organization
+│   ├── filebrowser/                # Web-based file manager
+│   ├── flaresolverr/               # CloudFlare bypass proxy
+│   ├── home-assistant/             # Smart home platform
+│   ├── iceberg/                    # Trading application
+│   ├── kometa/                     # Plex metadata manager
+│   ├── maria-db/                   # MySQL database
+│   ├── mqtt/                       # MQTT broker (Mosquitto)
+│   ├── open-webui/                 # AI chat interface
+│   ├── plex/                       # Media server
+│   ├── plextratksync/              # Plex-Trakt sync
+│   ├── prowlarr/                   # Indexer manager
+│   ├── radarr/                     # Movie management
+│   ├── rclone/                     # Cloud storage sync
+│   ├── rdt-client/                 # Real-Debrid client
+│   ├── readarr/                    # Book management
+│   ├── sonarr/                     # TV show management
+│   ├── truenas-jackettio-ingress/  # TrueNAS ingress
+│   ├── truenas-minio-secret/       # TrueNAS secrets
+│   ├── truenas-plex-ingress/       # TrueNAS Plex ingress
+│   ├── unifi/                      # Network controller
+│   ├── whoami/                     # Test application
+│   ├── zigbee2mqtt/                # Zigbee bridge
+│   └── zurg/                       # Real-Debrid WebDAV
+├── infrastructure/                  # Cluster infrastructure
+│   ├── alert-manager/              # Alert management
+│   ├── ansible/                    # Ansible inventory and playbooks
+│   ├── argocd-apps/                # GitOps applications
+│   ├── grafana/                    # Dashboards
+│   ├── longhorn/                   # Distributed storage
+│   ├── metallb/                    # Load balancer
+│   ├── nfs-share/                  # NFS storage provisioner
+│   ├── prometheus/                 # Monitoring and metrics
+│   ├── samba-share/                # SMB storage provisioner
+│   ├── traefik/                    # Ingress controller
+│   ├── apply-topology-spread.sh    # Pod distribution utility
+│   ├── force-delete-terminating.sh # Emergency cleanup script
+│   └── metallb_logs.sh             # MetalLB diagnostics
+└── docs/                           # Cluster documentation
+    ├── diagrams/                   # D2 architecture diagrams
+    ├── CASCADING_FAILURE_ANALYSIS.md
+    ├── FIXES_APPLIED.md
+    ├── HEALTH_CHECK_ANALYSIS.md
+    ├── POD_DISTRIBUTION_FIX_SUMMARY.md
+    ├── POD_DISTRIBUTION_STRATEGY.md
+    ├── PREVENTION_PLAN.md
+    ├── README.md                   # Main documentation
+    ├── deploy_with_common.md       # Helm chart guide
+    ├── homelab-monitoring-dashboard.json
+    └── network-diagram.md          # Network architecture
 ```
 
 ## Common Commands
 
 ### MetalLB Troubleshooting
 ```bash
-./metallb_logs.sh  # Collects comprehensive MetalLB logs and creates metallb_report.tgz
-```
-
-### Docker Build (for rdt-client)
-```bash
-cd /Users/eriksimko/github/homelab/rdt-client
-./build-docker.sh  # Builds ARM64 image for rdt-client
+./infrastructure/metallb_logs.sh  # Collects comprehensive MetalLB logs and creates metallb_report.tgz
 ```
 
 ### Kubernetes Management
 ```bash
 # Apply manifests manually
-kubectl apply -f <application-name>/
+kubectl apply -f apps/<application-name>/
+kubectl apply -f infrastructure/<component-name>/
 
 # Check deployments
 kubectl get deployments -n default
@@ -154,8 +191,8 @@ Each application typically includes:
 
 ## Development Workflow
 
-1. Edit YAML manifests in appropriate application directory
-2. Apply changes: `kubectl apply -f <app-directory>/`
+1. Edit YAML manifests in appropriate directory (apps/ or infrastructure/)
+2. Apply changes: `kubectl apply -f apps/<app-name>/` or `kubectl apply -f infrastructure/<component>/`
 3. Monitor deployment: `kubectl get pods -n default -w`
 4. Check logs: `kubectl logs -f <pod-name>`
 5. Verify ingress: `kubectl get ingress`
@@ -179,7 +216,7 @@ Each application typically includes:
 1. **Pod not starting**: Check `kubectl describe pod <pod-name>` for events
 2. **Storage issues**: Verify PVC is bound with `kubectl get pvc`
 3. **Network connectivity**: Check service endpoints with `kubectl get endpoints`
-4. **MetalLB issues**: Run `./metallb_logs.sh` to collect diagnostic information
+4. **MetalLB issues**: Run `./infrastructure/metallb_logs.sh` to collect diagnostic information
 5. **Node issues**: Check node status with `kubectl describe node <node-name>`
 
 ## Common Helm Chart
@@ -323,7 +360,7 @@ The cluster experienced recurring cascading failures where:
 **How to Trigger Rebalancing**:
 ```bash
 cd /Users/eriksimko/github/homelab/k3s/apps
-./apply-topology-spread.sh restart
+./infrastructure/apply-topology-spread.sh restart
 ```
 
 ### Monitoring Cluster Health
@@ -368,18 +405,18 @@ kubectl get pods -A --field-selector spec.nodeName=homelab-02 -o json | \
 
 **If Pod Concentration Occurs**:
 1. Verify topology spread is applied: `kubectl get deployment <name> -o jsonpath='{.spec.template.spec.topologySpreadConstraints}'`
-2. Trigger rebalancing: `./apply-topology-spread.sh restart`
+2. Trigger rebalancing: `./infrastructure/apply-topology-spread.sh restart`
 3. Monitor distribution: `kubectl get pods -A -o wide`
 
 ### Documentation References
 
 For detailed information about cluster stability:
-- `CASCADING_FAILURE_ANALYSIS.md` - Root cause analysis of 7 failure triggers
-- `PREVENTION_PLAN.md` - Comprehensive prevention strategy (11 fixes)
-- `FIXES_APPLIED.md` - Detailed changelog of applied fixes
-- `POD_DISTRIBUTION_STRATEGY.md` - Long-term pod distribution strategy
-- `POD_DISTRIBUTION_FIX_SUMMARY.md` - Implementation summary
-- `metallb/README.md`, `prometheus/README.md`, `longhorn/README.md` - Component-specific docs
+- `docs/CASCADING_FAILURE_ANALYSIS.md` - Root cause analysis of 7 failure triggers
+- `docs/PREVENTION_PLAN.md` - Comprehensive prevention strategy (11 fixes)
+- `docs/FIXES_APPLIED.md` - Detailed changelog of applied fixes
+- `docs/POD_DISTRIBUTION_STRATEGY.md` - Long-term pod distribution strategy
+- `docs/POD_DISTRIBUTION_FIX_SUMMARY.md` - Implementation summary
+- `infrastructure/metallb/README.md`, `infrastructure/prometheus/README.md`, `infrastructure/longhorn/README.md` - Component-specific docs
 
 ### Success Metrics (Post-Fix)
 
