@@ -49,9 +49,9 @@ spec:
         severity: warning
     - alert: HomelabNodeHighPodCount
       annotations:
-        description: High pod count (>25) increases resource contention. Consider rebalancing.
+        description: High pod count (>30) increases resource contention. Consider rebalancing.
         summary: '⚠️  Node {{ $labels.node }} has {{ $value }} pods'
-      expr: count(kube_pod_info{node=~"homelab-.*"}) by (node) > 25
+      expr: count(kube_pod_info{node=~"homelab-.*"}) by (node) > 30
       for: 5m
       labels:
         component: kubernetes
