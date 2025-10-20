@@ -16,112 +16,11 @@ This repository contains Kubernetes manifests and Helm charts for a self-hosted 
 
 ## Architecture
 
-```mermaid
-graph TB
-    subgraph "External Access"
-        Internet[Internet]
-        Domain["*.erix-homelab.site<br/>Wildcard TLS"]
-    end
-
-    subgraph "K3s Cluster - 192.168.11.0/24"
-        subgraph "Control Plane"
-            CP[homelab-control<br/>192.168.11.11<br/>Control Plane + Master]
-        end
-
-        subgraph "Worker Nodes"
-            W2[homelab-02<br/>192.168.11.12<br/>Worker]
-            W3[homelab-03<br/>192.168.11.13<br/>Worker + Zigbee USB]
-            W4[homelab-04<br/>192.168.11.14<br/>Worker + Databases]
-        end
-
-        subgraph "Core Infrastructure"
-            Traefik[Traefik<br/>192.168.11.200<br/>Ingress Controller]
-            MetalLB[MetalLB<br/>Load Balancer<br/>.200-.250]
-            Longhorn[Longhorn<br/>192.168.11.201<br/>Distributed Storage]
-            CertManager[Cert-Manager<br/>Let's Encrypt]
-        end
-
-        subgraph "Namespaces"
-            subgraph "default"
-                Media[Media Stack<br/>Overseerr, Calibre<br/>Pi-hole, Zurg]
-            end
-
-            subgraph "home-automation"
-                HA[Home Assistant<br/>192.168.11.212]
-                Z2M[Zigbee2MQTT<br/>192.168.11.213]
-                MQTT[Mosquitto<br/>192.168.11.206]
-                MariaDB[MariaDB<br/>192.168.11.203]
-            end
-
-            subgraph "network"
-                Unifi[Unifi Controller<br/>192.168.11.205]
-                MongoDB[MongoDB]
-            end
-
-            subgraph "monitoring"
-                Prometheus[Prometheus]
-                Grafana[Grafana]
-                AlertManager[AlertManager]
-            end
-        end
-    end
-
-    Internet --> Domain
-    Domain --> Traefik
-    Traefik --> Media
-    Traefik --> HA
-    Traefik --> Unifi
-    Traefik --> Grafana
-
-    MetalLB -.LoadBalancer IPs.-> Media
-    MetalLB -.LoadBalancer IPs.-> HA
-    MetalLB -.LoadBalancer IPs.-> Z2M
-    MetalLB -.LoadBalancer IPs.-> MQTT
-    MetalLB -.LoadBalancer IPs.-> MariaDB
-    MetalLB -.LoadBalancer IPs.-> Unifi
-
-    Media --> Longhorn
-    HA --> Longhorn
-    Unifi --> Longhorn
-    Prometheus --> Longhorn
-
-    CertManager -.SSL Certs.-> Traefik
-```
+![K3s Homelab Architecture](diagrams/architecture.svg)
 
 ## Service Endpoints
 
-```mermaid
-graph LR
-    subgraph "MetalLB IP Pool: 192.168.11.200-250"
-        T[200: Traefik]
-        L[201: Longhorn UI]
-        OS[202: Overseerr]
-        M[203: MariaDB]
-        PM[204: phpMyAdmin]
-        UN[205: Unifi]
-        MQ[206: Mosquitto]
-        ZU[208: Zurg]
-        CA[209: Calibre]
-        CW[210: Calibre-Web]
-        CWA[211: Calibre-Web Auto]
-        HAS[212: Home Assistant]
-        Z2M[213: Zigbee2MQTT]
-        PH[222: Pi-hole]
-    end
-
-    subgraph "Ingress Routes via Traefik"
-        I1[hass.erix-homelab.site]
-        I2[z2m.erix-homelab.site]
-        I3[overseer.erix-homelab.site]
-        I4[unifi.erix-homelab.site]
-        I5[grafana.erix-homelab.site]
-        I6[books.erix-homelab.site]
-        I7[pihole.erix-homelab.site]
-        I8[longhorn.erix-homelab.site]
-    end
-
-    T --> I1 & I2 & I3 & I4 & I5 & I6 & I7 & I8
-```
+![Network Endpoints](diagrams/network-endpoints.svg)
 
 ## Key Features
 

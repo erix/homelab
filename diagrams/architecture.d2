@@ -1,0 +1,225 @@
+direction: down
+
+title: K3s Homelab Architecture {
+  near: top-center
+  shape: text
+  style: {
+    font-size: 24
+    bold: true
+  }
+}
+
+internet: {
+  label: "☁ Internet ☁"
+  shape: cloud
+  style.fill: "#e3f2fd"
+  style.stroke: "#1976d2"
+  style.font-size: 16
+}
+
+domain: {
+  label: "*.erix-homelab.site\nWildcard TLS"
+  shape: rectangle
+  style.fill: "#fff9c4"
+  style.stroke: "#f57f17"
+  style.font-size: 14
+  style.bold: true
+}
+
+cluster: K3s Cluster (192.168.11.0/24) {
+  style.fill: "#fafafa"
+  style.stroke: "#616161"
+  style.stroke-width: 3
+
+  control_plane: Control Plane {
+    style.fill: "#f3e5f5"
+    style.stroke: "#7b1fa2"
+
+    control_node: {
+      label: "homelab-control\n192.168.11.11\nRaspberry Pi • Master\n625d uptime"
+      shape: rectangle
+      style.fill: "#c8e6c9"
+      style.stroke: "#388e3c"
+      style.font-size: 12
+    }
+  }
+
+  workers: Worker Nodes {
+    style.fill: "#f3e5f5"
+    style.stroke: "#7b1fa2"
+
+    worker2: {
+      label: "homelab-02\n.11.12\nWorker\n129d uptime"
+      shape: rectangle
+      style.fill: "#c8e6c9"
+      style.stroke: "#388e3c"
+      style.font-size: 11
+    }
+
+    worker3: {
+      label: "homelab-03\n.11.13\nWorker\n🔌 Zigbee USB\n625d uptime"
+      shape: rectangle
+      style.fill: "#c8e6c9"
+      style.stroke: "#388e3c"
+      style.font-size: 11
+    }
+
+    worker4: {
+      label: "homelab-04\n.11.14\nWorker\n💾 Databases\n129d uptime"
+      shape: rectangle
+      style.fill: "#c8e6c9"
+      style.stroke: "#388e3c"
+      style.font-size: 11
+    }
+
+    worker2 -> worker3: {style.opacity: 0}
+    worker3 -> worker4: {style.opacity: 0}
+  }
+
+  infrastructure: Core Infrastructure {
+    style.fill: "#fff9c4"
+    style.stroke: "#f57f17"
+
+    traefik: {
+      label: "Traefik\n192.168.11.200\nIngress Controller"
+      shape: rectangle
+      style.fill: "#bbdefb"
+      style.stroke: "#1565c0"
+      style.font-size: 11
+      style.bold: true
+    }
+
+    metallb: {
+      label: "MetalLB\n.200-.250\nLoad Balancer"
+      shape: rectangle
+      style.fill: "#bbdefb"
+      style.stroke: "#1565c0"
+      style.font-size: 11
+      style.bold: true
+    }
+
+    certmanager: {
+      label: "Cert-Manager\nLet's Encrypt\nCloudflare DNS"
+      shape: rectangle
+      style.fill: "#bbdefb"
+      style.stroke: "#1565c0"
+      style.font-size: 11
+      style.bold: true
+    }
+
+    longhorn: {
+      label: "Longhorn Storage\n192.168.11.201\n3-Way Replication"
+      shape: rectangle
+      style.fill: "#bbdefb"
+      style.stroke: "#1565c0"
+      style.font-size: 11
+      style.bold: true
+    }
+
+    traefik -> metallb: {style.opacity: 0}
+    metallb -> certmanager: {style.opacity: 0}
+    certmanager -> longhorn: {style.opacity: 0}
+  }
+
+  namespaces: Application Namespaces {
+    style.fill: "#eeeeee"
+    style.stroke: "#424242"
+
+    ns_default: "Namespace: default" {
+      style.fill: "#ffe0b2"
+      style.stroke: "#e65100"
+
+      default_apps: {
+        label: "• Overseerr (.202)\n• Calibre (.209)\n• Calibre-Web (.210)\n• Zurg (.208)\n• Pi-hole (.222)\n• phpMyAdmin (.204)"
+        shape: rectangle
+        style.fill: "#fff3e0"
+        style.stroke: "#ef6c00"
+        style.font-size: 10
+      }
+    }
+
+    ns_ha: "Namespace: home-automation" {
+      style.fill: "#ffe0b2"
+      style.stroke: "#e65100"
+
+      ha_apps: {
+        label: "• Home Assistant (.212)\n• Zigbee2MQTT (.213)\n• Mosquitto (.206)\n• MariaDB (.203)"
+        shape: rectangle
+        style.fill: "#fff3e0"
+        style.stroke: "#ef6c00"
+        style.font-size: 10
+      }
+    }
+
+    ns_network: "Namespace: network" {
+      style.fill: "#ffe0b2"
+      style.stroke: "#e65100"
+
+      network_apps: {
+        label: "• Unifi (.205)\n• MongoDB"
+        shape: rectangle
+        style.fill: "#fff3e0"
+        style.stroke: "#ef6c00"
+        style.font-size: 10
+      }
+    }
+
+    ns_monitoring: "Namespace: monitoring" {
+      style.fill: "#ffe0b2"
+      style.stroke: "#e65100"
+
+      monitoring_apps: {
+        label: "• Prometheus\n• Grafana\n• AlertManager\n• Node Exporter"
+        shape: rectangle
+        style.fill: "#fff3e0"
+        style.stroke: "#ef6c00"
+        style.font-size: 10
+      }
+    }
+
+    ns_default -> ns_ha: {style.opacity: 0}
+    ns_ha -> ns_network: {style.opacity: 0}
+    ns_network -> ns_monitoring: {style.opacity: 0}
+  }
+}
+
+# Connections
+internet -> domain: {
+  style.stroke-width: 3
+  style.stroke: "#1976d2"
+}
+
+domain -> cluster.infrastructure.traefik: {
+  style.stroke-width: 3
+  style.stroke: "#1976d2"
+}
+
+cluster.infrastructure.traefik -> cluster.namespaces.ns_default: {
+  style.stroke-dash: 3
+  style.stroke: "#666"
+}
+
+cluster.infrastructure.traefik -> cluster.namespaces.ns_ha: {
+  style.stroke-dash: 3
+  style.stroke: "#666"
+}
+
+cluster.infrastructure.traefik -> cluster.namespaces.ns_network: {
+  style.stroke-dash: 3
+  style.stroke: "#666"
+}
+
+cluster.infrastructure.traefik -> cluster.namespaces.ns_monitoring: {
+  style.stroke-dash: 3
+  style.stroke: "#666"
+}
+
+cluster.infrastructure.certmanager -> cluster.infrastructure.traefik: "SSL Certs" {
+  style.stroke-dash: 3
+  style.stroke: "#4caf50"
+}
+
+cluster.infrastructure.longhorn -> cluster.namespaces: "Storage" {
+  style.stroke-dash: 3
+  style.stroke: "#ff9800"
+}

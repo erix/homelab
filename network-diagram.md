@@ -8,9 +8,9 @@ graph TB
     Router --> LAN[LAN Network<br/>192.168.11.0/24]
     
     LAN --> Control[homelab-control<br/>192.168.11.11<br/>Control Plane]
-    LAN --> Node02[homelab-02<br/>192.168.11.12<br/>Worker - NotReady]
-    LAN --> Node03[homelab-03<br/>192.168.11.13<br/>Worker]
-    LAN --> Node04[homelab-04<br/>192.168.11.14<br/>Worker]
+    LAN --> Node02[homelab-02<br/>192.168.11.12<br/>Worker - Ready]
+    LAN --> Node03[homelab-03<br/>192.168.11.13<br/>Worker - Zigbee USB]
+    LAN --> Node04[homelab-04<br/>192.168.11.14<br/>Worker - Databases]
     
     LAN --> MetalLB[MetalLB IP Pool<br/>192.168.11.200-250]
     
@@ -31,16 +31,19 @@ graph TB
     end
     
     subgraph "MetalLB LoadBalancer Services"
-        HA[Home Assistant<br/>192.168.11.207:8123]
+        HA[Home Assistant<br/>192.168.11.212:8123]
         Unifi[Unifi Controller<br/>192.168.11.205:8080/8443]
-        Z2M[Zigbee2MQTT<br/>192.168.11.206:8080]
+        Z2M[Zigbee2MQTT<br/>192.168.11.213:8080]
         Pihole[Pi-hole DNS<br/>192.168.11.222:53]
         Maria[MariaDB<br/>192.168.11.203:3306]
         Overseer[Overseerr<br/>192.168.11.202:5055]
         Calibre[Calibre<br/>192.168.11.209:8080]
         CalibreWeb[Calibre-Web<br/>192.168.11.210:8083]
-        MQTT[Mosquitto MQTT<br/>192.168.11.230:8883]
+        CalibreWebAuto[Calibre-Web Auto<br/>192.168.11.211:8083]
+        MQTT[Mosquitto MQTT<br/>192.168.11.206:8883]
         Zurg[Zurg<br/>192.168.11.208:9999]
+        Longhorn[Longhorn UI<br/>192.168.11.201:80]
+        phpMyAdmin[phpMyAdmin<br/>192.168.11.204:80]
     end
     
     subgraph "ClusterIP Services"
@@ -62,8 +65,11 @@ graph TB
     Router2 --> Overseer
     Router2 --> Calibre
     Router2 --> CalibreWeb
+    Router2 --> CalibreWebAuto
     Router2 --> MQTT
     Router2 --> Zurg
+    Router2 --> Longhorn
+    Router2 --> phpMyAdmin
     
     Traefik --> Prowlarr
     Traefik --> Sonarr
@@ -85,7 +91,7 @@ graph TB
             ControlStorage[Local Storage<br/>Longhorn Volume]
         end
         
-        subgraph "homelab-02 (NotReady)"
+        subgraph "homelab-02 (Ready)"
             Node02Storage[Local Storage<br/>Longhorn Volume]
         end
         
@@ -97,10 +103,12 @@ graph TB
             Node04Storage[Local Storage<br/>Longhorn Volume]
         end
         
+        ControlStorage <-.->|Replication| Node02Storage
         ControlStorage <-.->|Replication| Node03Storage
         ControlStorage <-.->|Replication| Node04Storage
+        Node02Storage <-.->|Replication| Node03Storage
+        Node02Storage <-.->|Replication| Node04Storage
         Node03Storage <-.->|Replication| Node04Storage
-        Node02Storage -.->|Offline| Node03Storage
     end
     
     subgraph "Storage Classes"
@@ -137,8 +145,7 @@ graph TB
         ControlLonghorn[Longhorn Storage]
     end
     
-    subgraph "homelab-02 (192.168.11.12) - NotReady"
-        HAStateful[Home Assistant<br/>StatefulSet<br/>Host Network]
+    subgraph "homelab-02 (192.168.11.12) - Ready"
         Prowlarr2[Prowlarr]
         Readarr2[Readarr]
         OpenWebUI2[Open-WebUI]
@@ -146,26 +153,32 @@ graph TB
         CalibreWeb2[Calibre-Web]
         Overseer2[Overseerr]
         Pihole2[Pi-hole]
-        Mosquitto2[Mosquitto]
         RClone2[rclone DaemonSet]
+        Node02Longhorn[Longhorn Storage]
     end
-    
-    subgraph "homelab-03 (192.168.11.13)"
+
+    subgraph "homelab-03 (192.168.11.13) - home-automation"
+        HAStateful[Home Assistant<br/>StatefulSet<br/>Host Network]
         Z2MPod[Zigbee2MQTT<br/>USB Device Access]
+        Mosquitto3[Mosquitto MQTT]
+        MariaStateful[MariaDB<br/>StatefulSet]
         RClone3[rclone DaemonSet]
         Node03Longhorn[Longhorn Storage]
     end
-    
-    subgraph "homelab-04 (192.168.11.14)"
+
+    subgraph "homelab-04 (192.168.11.14) - network"
+        UnifiPod[Unifi Controller]
         MongoStateful[MongoDB<br/>StatefulSet]
-        MariaStateful[MariaDB<br/>StatefulSet]
         FlaresolverrPod[Flaresolverr]
         RClone4[rclone DaemonSet]
         Node04Longhorn[Longhorn Storage]
     end
     
+    ControlLonghorn <-.->|Replication| Node02Longhorn
     ControlLonghorn <-.->|Replication| Node03Longhorn
     ControlLonghorn <-.->|Replication| Node04Longhorn
+    Node02Longhorn <-.->|Replication| Node03Longhorn
+    Node02Longhorn <-.->|Replication| Node04Longhorn
     Node03Longhorn <-.->|Replication| Node04Longhorn
 ```
 
