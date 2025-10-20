@@ -1,0 +1,59 @@
+# MetalLB Helm Values
+# Optimized health check settings for Raspberry Pi ARM nodes
+#
+# Applied: 2025-10-20
+# Reason: Speaker pods were experiencing frequent restarts due to liveness probe
+#         timeouts under load. Original 1s timeout was too aggressive for ARM hardware.
+#
+# Changes:
+# - Increased timeoutSeconds from 1s to 5s (gives more time for slow responses)
+# - Increased failureThreshold from 3 to 5 (more tolerance before restart)
+# - Increased periodSeconds from 10s to 15s (reduced probe overhead)
+#
+# This allows 5 attempts × 5 seconds = 25 seconds to respond before restart
+# vs. previous 3 attempts × 1 second = 3 seconds total.
+
+speaker:
+  # Liveness probe settings for both speaker and FRR containers
+  livenessProbe:
+    enabled: true
+    timeoutSeconds: 5
+    failureThreshold: 5
+    periodSeconds: 15
+    initialDelaySeconds: 10
+    successThreshold: 1
+
+  # Readiness probe settings
+  readinessProbe:
+    enabled: true
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 10
+    initialDelaySeconds: 10
+    successThreshold: 1
+
+  # Resource limits to prevent resource contention
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
+# FRR (BGP daemon) settings
+frrk8s:
+  livenessProbe:
+    enabled: true
+    timeoutSeconds: 5
+    failureThreshold: 5
+    periodSeconds: 15
+    initialDelaySeconds: 10
+    successThreshold: 1
+
+  readinessProbe:
+    enabled: true
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 10
+    initialDelaySeconds: 10
+    successThreshold: 1

@@ -1,0 +1,13 @@
+USER-SUPPLIED VALUES:
+defaultSettings:
+  defaultDataPath: /storage01
+
+  # Reduce concurrent operations to prevent cascading failures (2025-10-20)
+  concurrentReplicaRebuildPerNodeLimit: "2"  # Default: 5
+  concurrentVolumeBackupRestorePerNodeLimit: "2"  # Default: 5
+
+  # Increase wait time before rebuilding degraded replicas
+  replicaReplenishmentWaitInterval: "600"  # 10 minutes
+
+  # Allow volumes to be created even if degraded (prevents restart loops)
+  allowVolumeCreationWithDegradedAvailability: "true"

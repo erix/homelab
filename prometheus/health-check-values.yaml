@@ -1,0 +1,175 @@
+# Prometheus Stack Health Check Overrides
+# Optimized for Raspberry Pi ARM hardware
+#
+# Applied: 2025-10-20
+# Reason: Node exporter experiencing catastrophic restart counts (7,444 on homelab-03)
+#         due to 1-second liveness probe timeouts. ARM hardware needs more time
+#         to respond under load.
+#
+# To apply:
+#   helm upgrade prometheus prometheus-community/kube-prometheus-stack \
+#     -n monitoring \
+#     -f health-check-values.yaml \
+#     --reuse-values
+
+# Prometheus Node Exporter (DaemonSet on all nodes)
+# CRITICAL: This component had 7,444 restarts on homelab-03
+prometheus-node-exporter:
+  livenessProbe:
+    httpGet:
+      httpHeaders: []
+      scheme: http
+    initialDelaySeconds: 10
+    periodSeconds: 15
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 5
+
+  readinessProbe:
+    httpGet:
+      httpHeaders: []
+      scheme: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+
+# Prometheus Operator
+prometheusOperator:
+  livenessProbe:
+    enabled: true
+    timeoutSeconds: 5
+    failureThreshold: 5
+    periodSeconds: 15
+
+  readinessProbe:
+    enabled: true
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 10
+
+# Prometheus Server
+prometheus:
+  prometheusSpec:
+    # Resource limits to prevent unbounded consumption (2025-10-20)
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 2
+        memory: 4Gi
+
+    # Pod anti-affinity to spread across nodes (2025-10-20)
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - prometheus
+              topologyKey: kubernetes.io/hostname
+
+    # Prometheus container probes
+    containers:
+      - name: prometheus
+        livenessProbe:
+          timeoutSeconds: 5
+          failureThreshold: 5
+          periodSeconds: 15
+        readinessProbe:
+          timeoutSeconds: 5
+          failureThreshold: 3
+          periodSeconds: 10
+
+# Alertmanager
+alertmanager:
+  alertmanagerSpec:
+    # Resource limits (2025-10-20)
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # Pod anti-affinity to spread across nodes (2025-10-20)
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/name
+                    operator: In
+                    values:
+                      - alertmanager
+              topologyKey: kubernetes.io/hostname
+
+    # Alertmanager container probes
+    containers:
+      - name: alertmanager
+        livenessProbe:
+          timeoutSeconds: 5
+          failureThreshold: 5
+          periodSeconds: 15
+        readinessProbe:
+          timeoutSeconds: 5
+          failureThreshold: 3
+          periodSeconds: 10
+
+# Grafana (if managed by this chart)
+grafana:
+  # Resource limits (2025-10-20)
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+
+  # Pod anti-affinity to spread across nodes (2025-10-20)
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - grafana
+            topologyKey: kubernetes.io/hostname
+
+  livenessProbe:
+    timeoutSeconds: 5
+    failureThreshold: 5
+    periodSeconds: 15
+    initialDelaySeconds: 60  # Grafana can take time to start
+
+  readinessProbe:
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 10
+    initialDelaySeconds: 60
+
+# Kube-state-metrics
+kube-state-metrics:
+  livenessProbe:
+    timeoutSeconds: 5
+    failureThreshold: 5
+    periodSeconds: 15
+
+  readinessProbe:
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 10

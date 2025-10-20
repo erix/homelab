@@ -268,8 +268,199 @@ With `Recreate` strategy:
 - Longhorn Helm chart does not expose anti-affinity settings for CSI controllers
 - Future Longhorn versions may add native support for this configuration
 
+## Health Check Issues and Cascading Failures
+
+### Problem: Cascading Failure Scenario (Identified 2025-10-20)
+
+Longhorn component restarts can create a **cascading failure scenario** that affects the entire cluster:
+
+1. Longhorn component (engine-image, CSI plugin, or manager) fails health check
+2. Kubernetes restarts the pod
+3. During restart, volume attachments are delayed
+4. Application pods waiting for volumes timeout on their own health checks
+5. Application pods restart, triggering more volume operations
+6. **Cascading effect** propagates across the cluster
+
+**Observed Restart Counts:**
+| Component | Node | Restarts | Impact |
+|-----------|------|----------|--------|
+| engine-image-ei-f4f7aa25 | homelab-02 | **556** | CRITICAL - Engine failures cause volume unavailability |
+| engine-image-ei-f4f7aa25 | homelab-04 | **82** | HIGH - Affects volumes on this node |
+| longhorn-csi-plugin | homelab-03 | **37** | HIGH - CSI failures delay volume attachments |
+| longhorn-csi-plugin | homelab-02 | **11** | MODERATE - Volume mount delays |
+| longhorn-csi-plugin | homelab-04 | **6** | MODERATE - Volume mount delays |
+| longhorn-manager | homelab-03 | **5** | MODERATE - Manager restarts affect scheduling |
+| longhorn-manager | homelab-04 | **4** | MODERATE - Manager restarts affect scheduling |
+
+### Current Probe Configuration
+
+Longhorn uses relatively aggressive probes for ARM hardware:
+
+```yaml
+# Engine image (exec probe)
+livenessProbe:
+  exec:
+    command: ["sh", "-c", "/data/longhorn version --client-only"]
+  failureThreshold: 3
+  initialDelaySeconds: 3
+  periodSeconds: 5        # Very frequent checks
+  successThreshold: 1
+  timeoutSeconds: 4
+
+# CSI plugins (HTTP probe)
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 9808
+  failureThreshold: 3
+  initialDelaySeconds: 3
+  periodSeconds: 5        # Very frequent checks
+  successThreshold: 1
+  timeoutSeconds: 4
+```
+
+**Total grace period**: 3 failures × 5s period = **15 seconds** (better than MetalLB/Prometheus, but still tight)
+
+### Root Cause
+
+The **5-second check period** combined with **exec/HTTP probes** on ARM hardware causes issues:
+
+1. **exec probes** (engine-image) require spawning a shell and running a binary
+2. Under I/O load (which Longhorn creates), these probes can take >4 seconds
+3. **Frequent checks** (every 5s) increase system load
+4. When volumes are under heavy use, the probe itself competes for resources
+
+### Challenge: Limited Configurability
+
+Unlike MetalLB and Prometheus, **Longhorn probe settings are NOT easily configurable** via Helm:
+
+1. **engine-image DaemonSets** are dynamically created by Longhorn (not in Helm chart)
+2. **CSI plugin probes** are hardcoded in the Longhorn codebase
+3. **longhorn-manager** is managed by Helm but doesn't expose probe settings
+
+### Workarounds and Mitigation
+
+#### Option 1: Manual Patch (Temporary - Not Recommended)
+
+You can manually patch the DaemonSets, but this will be overwritten when:
+- Longhorn is upgraded
+- Engine images are updated
+- Longhorn controller recreates the DaemonSets
+
+```bash
+# Example: Patch engine-image DaemonSet (will be reset on updates!)
+kubectl patch daemonset engine-image-ei-f4f7aa25 -n longhorn-system --type='json' -p='[
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds", "value": 10},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/periodSeconds", "value": 15},
+  {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/failureThreshold", "value": 5}
+]'
+```
+
+**Not recommended** - changes are ephemeral and not version-controlled.
+
+#### Option 2: Longhorn Settings Tuning (Recommended)
+
+While we can't easily change probes, we can reduce Longhorn's resource contention:
+
+```yaml
+# Add to current-values.yaml or apply via helm upgrade
+defaultSettings:
+  # Reduce concurrent operations to ease load
+  concurrentReplicaRebuildPerNodeLimit: 2  # Default: 5
+  concurrentVolumeBackupRestorePerNodeLimit: 2  # Default: 5
+
+  # Increase rebuild wait time to reduce churning
+  replicaReplenishmentWaitInterval: 600  # Default: 600 (10min)
+
+  # Allow degraded volume creation (avoid restart loops)
+  allowVolumeCreationWithDegradedAvailability: true
+```
+
+Apply with:
+```bash
+helm upgrade longhorn longhorn/longhorn -n longhorn-system -f current-values.yaml
+```
+
+#### Option 3: Node Resource Optimization (Recommended)
+
+Since the issue is resource contention on ARM hardware:
+
+1. **Monitor node resources**:
+   ```bash
+   kubectl top nodes
+   kubectl top pods -n longhorn-system --sort-by=cpu
+   kubectl top pods -n longhorn-system --sort-by=memory
+   ```
+
+2. **Check I/O wait** - SD cards and slow storage are major contributors
+
+3. **Consider hardware upgrades**:
+   - Faster storage (SSD vs SD card)
+   - More memory
+   - Better cooling (CPU throttling affects probe response times)
+
+### Monitoring for Cascading Failures
+
+Watch for these patterns:
+
+```bash
+# Monitor Longhorn pod restarts
+kubectl get pods -n longhorn-system -o wide -w
+
+# Check restart counts
+kubectl get pods -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.containerStatuses[0].restartCount}{"\n"}{end}' | sort -k2 -nr | head -10
+
+# Monitor volume health
+kubectl get volumes -n longhorn-system
+kubectl get engines -n longhorn-system
+
+# Watch for volume attachment delays
+kubectl get events -A --watch | grep -i "attachdetach\|volume"
+```
+
+**Signs of cascading failures:**
+1. **Engine-image pod restarts** → Volume becomes unavailable
+2. **Application pod stuck in ContainerCreating** → Waiting for volume attachment
+3. **Application pod CrashLoopBackOff** → Volume timeout triggers app restart
+4. **Multiple volumes degraded simultaneously** → Manager/CSI plugin instability
+
+### Mitigation During Cascading Failures
+
+When cascading failures occur:
+
+1. **Identify the trigger**:
+   ```bash
+   kubectl get events -A --sort-by='.lastTimestamp' | grep -i "failed\|error" | tail -50
+   ```
+
+2. **Check Longhorn volume status**:
+   ```bash
+   kubectl get volumes -n longhorn-system | grep -v Healthy
+   ```
+
+3. **Check for resource exhaustion**:
+   ```bash
+   kubectl describe nodes | grep -A 5 "Allocated resources"
+   kubectl top nodes
+   ```
+
+4. **Last resort - restart affected components**:
+   ```bash
+   kubectl rollout restart daemonset/longhorn-manager -n longhorn-system
+   ```
+
+### Future Improvements
+
+1. **File feature request** with Longhorn project to make probe settings configurable
+   - [Longhorn GitHub Issues](https://github.com/longhorn/longhorn/issues)
+
+2. **Consider admission controller** to automatically modify probe settings (advanced)
+
+3. **Monitor for Longhorn updates** that may add probe configurability
+
 ## References
 
 - Longhorn Documentation: https://longhorn.io/
 - Kubernetes Pod Anti-Affinity: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
 - Longhorn CSI Driver Architecture: https://longhorn.io/docs/latest/concepts/#csi-driver
+- Health Check Analysis: ../HEALTH_CHECK_ANALYSIS.md
