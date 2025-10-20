@@ -250,3 +250,153 @@ dependencies:
 ```
 
 This reduces template duplication and ensures consistency across all applications.
+
+## Cluster Stability and Known Issues
+
+### Hardware Characteristics
+- **CPU**: Raspberry Pi 4, 4-core ARM64
+- **Memory**: 4GB RAM per node
+- **Storage**: USB 3.0 flash drives (~150MB/s read, variable write speeds)
+- **Constraint**: Resource-limited hardware requires careful tuning
+
+### Known Stability Issues (Resolved 2025-10-20)
+
+#### Problem: Cascading Failures and Pod Concentration
+The cluster experienced recurring cascading failures where:
+1. Initial trigger (snapshot, probe timeout, or load spike)
+2. Health probes fail → pods restart → more load → more failures
+3. Node becomes NotReady → pods migrate to other nodes
+4. **Pods permanently concentrate on one node** (e.g., 36 pods on homelab-03)
+5. Overloaded node at risk of another cascade
+
+**Root Causes Identified**:
+1. **Aggressive health check timeouts** (1s) too strict for ARM hardware under load
+2. **Overlapping Longhorn snapshots** at midnight-1 AM causing I/O spikes
+3. **High concurrent Longhorn operations** (5 rebuilds) overwhelming nodes
+4. **No resource limits** on Prometheus allowing unbounded memory/CPU consumption
+5. **No pod distribution policy** - Kubernetes doesn't auto-rebalance pods
+6. **No swap** - OOM killer activates under memory pressure
+7. **Slow iptables operations** under load (91 seconds for ChainExists)
+
+#### Solutions Implemented
+
+**Critical Fixes (Applied 2025-10-20)**:
+
+1. **Health Check Optimization** (`prometheus/health-check-values.yaml`, `metallb/values.yaml`)
+   - Increased probe timeouts: 1s → 5s
+   - Increased failure threshold: 3 → 5 failures
+   - Increased period: 10s → 15s
+   - Grace period before restart: 3s → 25s
+   - **Impact**: Eliminated false-positive restarts (7,444 restarts → 0)
+
+2. **Longhorn Snapshot Staggering** (via kubectl patch)
+   ```
+   database-snapshot: 0 0 * * ?     (midnight)
+   app-snapshot:      0 3 * * ?     (3 AM, was 1 AM)
+   database-backup:   0 2 ? * MON   (Monday 2 AM)
+   app-backup:        0 2 ? * WED   (Wednesday 2 AM, was Monday)
+   ```
+   - **Impact**: Eliminated midnight I/O spike pattern
+
+3. **Longhorn Concurrent Operations** (`longhorn/current-values.yaml`)
+   - Reduced concurrent replica rebuilds: 5 → 2 per node
+   - Reduced concurrent backup/restore: 5 → 2 per node
+   - Increased rebuild wait interval: 600s (10 minutes)
+   - Allow degraded volume creation: true
+   - **Impact**: Prevents rebuild cascades
+
+4. **Prometheus Resource Limits** (`prometheus/health-check-values.yaml`)
+   ```yaml
+   prometheus:     500m-2 CPU, 2-4Gi memory
+   alertmanager:   100m-500m CPU, 256-512Mi memory
+   grafana:        250m-1 CPU, 512Mi-1Gi memory
+   ```
+   - Pod anti-affinity to spread across nodes
+   - **Impact**: Prevents unbounded resource consumption
+
+5. **Automatic Pod Distribution** (Topology Spread Constraints)
+   - Applied to ALL 32 deployments + 2 StatefulSets
+   - Configuration: `maxSkew: 1, whenUnsatisfiable: ScheduleAnyway`
+   - Tool: `apply-topology-spread.sh` for automation
+   - **Impact**: Future pods automatically spread evenly across nodes
+
+**How to Trigger Rebalancing**:
+```bash
+cd /Users/eriksimko/github/homelab/k3s/apps
+./apply-topology-spread.sh restart
+```
+
+### Monitoring Cluster Health
+
+**Check Pod Distribution**:
+```bash
+kubectl get pods -A -o wide --no-headers | awk '{print $8}' | grep -E "homelab" | sort | uniq -c | sort -rn
+```
+Expected: ~16 pods per node (±2)
+
+**Check Node Load**:
+```bash
+kubectl top nodes
+# Healthy: Load <8 (2x CPU count)
+# Warning: Load >8
+# Critical: Load >16
+```
+
+**Check for Terminating Pods** (sign of zombie pod issue):
+```bash
+kubectl get pods -A | grep Terminating
+```
+
+**Force Delete Terminating Pods** (if node is NotReady):
+```bash
+kubectl get pods -A --field-selector spec.nodeName=homelab-02 -o json | \
+  jq -r '.items[] | select(.metadata.deletionTimestamp != null) |
+  "\(.metadata.namespace) \(.metadata.name)"' | \
+  while read ns pod; do
+    kubectl delete pod -n $ns $pod --grace-period=0 --force
+  done
+```
+
+### Emergency Recovery Procedures
+
+**If Node Goes NotReady**:
+1. **Don't panic** - Let it settle for 5-10 minutes
+2. **Check load**: `ssh <node> "uptime"`
+3. **Look for zombie pods**: `kubectl get pods -A | grep Terminating`
+4. **If zombies exist**: Force-delete them (command above)
+5. **If still stuck after 15 min**: Restart k3s-agent on the node
+
+**If Pod Concentration Occurs**:
+1. Verify topology spread is applied: `kubectl get deployment <name> -o jsonpath='{.spec.template.spec.topologySpreadConstraints}'`
+2. Trigger rebalancing: `./apply-topology-spread.sh restart`
+3. Monitor distribution: `kubectl get pods -A -o wide`
+
+### Documentation References
+
+For detailed information about cluster stability:
+- `CASCADING_FAILURE_ANALYSIS.md` - Root cause analysis of 7 failure triggers
+- `PREVENTION_PLAN.md` - Comprehensive prevention strategy (11 fixes)
+- `FIXES_APPLIED.md` - Detailed changelog of applied fixes
+- `POD_DISTRIBUTION_STRATEGY.md` - Long-term pod distribution strategy
+- `POD_DISTRIBUTION_FIX_SUMMARY.md` - Implementation summary
+- `metallb/README.md`, `prometheus/README.md`, `longhorn/README.md` - Component-specific docs
+
+### Success Metrics (Post-Fix)
+
+**Before (2025-10-20 morning)**:
+- Prometheus node-exporter: 7,444 restarts on homelab-03
+- MetalLB speaker: 21 restarts on homelab-02
+- homelab-02 NotReady event with load 60.09 (15x normal)
+- Pod distribution: 36 pods on homelab-03, 12 on homelab-02, 12 on homelab-04
+
+**After (2025-10-20 evening)**:
+- All components stable with 0 restarts
+- Cluster recovered from NotReady in <10 minutes
+- Topology spread constraints applied to all deployments
+- I/O load staggered across different times/days
+
+**Target Ongoing**:
+- Zero NotReady events over 7 days
+- Balanced pod distribution (±2 pods per node)
+- Node load <8 during normal operations
+- No probe timeout restarts
