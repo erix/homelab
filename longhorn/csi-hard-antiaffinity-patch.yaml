@@ -1,0 +1,17 @@
+# Patch to apply hard anti-affinity to Longhorn CSI controllers
+# This ensures no 2 replicas run on the same node
+# When a node goes down, only 2/3 replicas will run until it comes back
+
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - REPLACE_WITH_APP_NAME
+            topologyKey: kubernetes.io/hostname

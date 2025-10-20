@@ -16,6 +16,16 @@ spec:
       labels:
         app: calibre
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - homelab-04
       containers:
       - name: calibre
         image: linuxserver/calibre:7.23.0
