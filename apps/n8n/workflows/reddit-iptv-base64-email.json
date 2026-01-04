@@ -1,0 +1,171 @@
+{
+  "name": "Reddit IPTV Base64 Email",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        }
+      },
+      "id": "Cron_1",
+      "name": "Check Hourly",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.reddit.com/r/IPTV_ZONENEW/new.json",
+        "responseFormat": "json",
+        "queryParametersUi": {
+          "parameter": [
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "headerParametersUi": {
+          "parameter": [
+            {
+              "name": "User-Agent",
+              "value": "n8n-ip-tv-monitor/1.0"
+            }
+          ]
+        }
+      },
+      "id": "HttpRequest_1",
+      "name": "Fetch New Reddit Posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -620,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const children = ($json.data?.children) ?? [];\nreturn children.map((child) => {\n  const data = child.data ?? {};\n  return {\n    json: {\n      title: data.title ?? '',\n      body: data.selftext ?? '',\n      author: data.author ?? '',\n      createdUtc: data.created_utc ?? null,\n      sourceUrl: data.permalink ? `https://reddit.com${data.permalink}` : (data.url ?? ''),\n    }\n  };\n});"
+      },
+      "id": "Function_ExtractPosts",
+      "name": "Extract Posts",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -360,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "const MIN_LENGTH = 40;\nconst base64Regex = /(?:[A-Za-z0-9+/]{4}){5,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?/g;\n\nconst results = [];\n\nfor (const item of items) {\n  const { title = '', body = '', author = '', sourceUrl = '', createdUtc = null } = item.json;\n  const sources = [\n    { label: 'title', value: title },\n    { label: 'body', value: body }\n  ];\n\n  for (const source of sources) {\n    if (!source.value) {\n      continue;\n    }\n\n    const matches = source.value.match(base64Regex);\n    if (!matches) {\n      continue;\n    }\n\n    for (const encoded of matches) {\n      if (!encoded || encoded.trim().length < MIN_LENGTH) {\n        continue;\n      }\n\n      let decoded;\n      try {\n        decoded = Buffer.from(encoded, 'base64').toString('utf8').trim();\n      } catch (error) {\n        continue;\n      }\n\n      if (!decoded) {\n        continue;\n      }\n\n      results.push({\n        json: {\n          title,\n          author,\n          sourceUrl,\n          createdUtc,\n          matchSource: source.label,\n          encodedContent: encoded,\n          decodedContent: decoded\n        }\n      });\n    }\n  }\n}\n\nreturn results;"
+      },
+      "id": "Function_FindBase64",
+      "name": "Find Base64 Matches",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "if (items.length === 0) {\n  return [];\n}\n\nconst lines = items.map((item, index) => {\n  const { title, author, sourceUrl, matchSource, encodedContent, decodedContent, createdUtc } = item.json;\n  const createdDate = createdUtc ? new Date(createdUtc * 1000).toISOString() : 'unknown';\n  return [\n    `#${index + 1}: ${title || 'Untitled'}`,\n    `Author: ${author || 'unknown'}`,\n    `Reddit URL: ${sourceUrl}`,\n    `Matched Within: ${matchSource}`,\n    `Created: ${createdDate}`,\n    `Encoded Snippet: ${encodedContent.substring(0, 80)}...`,\n    'Decoded Content:',\n    decodedContent,\n    ''.padEnd(40, '-')\n  ].join('\\n');\n});\n\nreturn [\n  {\n    json: {\n      subject: `Decoded IPTV drops (${items.length})`,\n      body: lines.join('\\n\\n')\n    }\n  }\n];"
+      },
+      "id": "Function_PrepareEmail",
+      "name": "Prepare Email Body",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        180,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "n8n@erix-homelab.site",
+        "toEmail": "erik.simko@gmail.com",
+        "subject": "={{ $json[\"subject\"] }}",
+        "text": "={{ $json[\"body\"] }}",
+        "options": {}
+      },
+      "id": "EmailSend_1",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        460,
+        0
+      ],
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Check Hourly": {
+      "main": [
+        [
+          {
+            "node": "Fetch New Reddit Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch New Reddit Posts": {
+      "main": [
+        [
+          {
+            "node": "Extract Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Posts": {
+      "main": [
+        [
+          {
+            "node": "Find Base64 Matches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Base64 Matches": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Body": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "pinData": {}
+}

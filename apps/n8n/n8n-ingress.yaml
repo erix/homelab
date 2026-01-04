@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: n8n-ingress
+  labels:
+    app: n8n
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: n8n.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: n8n-service
+            port:
+              number: 80
+  tls:
+  - secretName: erix-homelab-site-tls
+    hosts:
+    - n8n.erix-homelab.site
