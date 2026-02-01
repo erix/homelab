@@ -154,13 +154,22 @@ grafana:
     timeoutSeconds: 5
     failureThreshold: 5
     periodSeconds: 15
-    initialDelaySeconds: 60  # Grafana can take time to start
+    initialDelaySeconds: 300  # Grafana database migrations can take 5+ minutes
 
   readinessProbe:
     timeoutSeconds: 5
     failureThreshold: 3
     periodSeconds: 10
-    initialDelaySeconds: 60
+    initialDelaySeconds: 300  # Wait for migrations to complete before serving traffic
+
+  # Pin to homelab-03 (homelab-02 has stability issues)
+  nodeSelector:
+    kubernetes.io/hostname: homelab-03
+
+  # LoadBalancer service configuration
+  service:
+    type: LoadBalancer
+    loadBalancerIP: 192.168.11.210
 
 # Kube-state-metrics
 kube-state-metrics:

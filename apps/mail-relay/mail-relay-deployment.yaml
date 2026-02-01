@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mail-relay
+  labels:
+    app: mail-relay
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: mail-relay
+  template:
+    metadata:
+      labels:
+        app: mail-relay
+    spec:
+      containers:
+        - name: mail-relay
+          image: boky/postfix:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 25
+              name: smtp
+            - containerPort: 587
+              name: submission
+          env:
+            - name: TZ
+              value: "Etc/UTC"
+            - name: MYNETWORKS
+              value: "127.0.0.0/8 10.42.0.0/16 192.168.11.0/24"
+            - name: RELAYHOST_TLS_LEVEL
+              value: "encrypt"
+            - name: SMTPD_SASL_USERS
+              valueFrom:
+                secretKeyRef:
+                  name: mail-relay-secret
+                  key: SMTPD_SASL_USERS
+          envFrom:
+            - secretRef:
+                name: mail-relay-secret
+          readinessProbe:
+            tcpSocket:
+              port: smtp
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: smtp
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 20m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

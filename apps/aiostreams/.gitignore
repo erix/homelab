@@ -1,0 +1,2 @@
+# Ignore plain secret files (never commit these!)
+aiostreams-secret.yaml

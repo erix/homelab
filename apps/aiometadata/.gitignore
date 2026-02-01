@@ -1,0 +1,3 @@
+# Ignore plain secret files (never commit these!)
+aiometadata-secret.yaml
+aiometadata-secret-template.yaml

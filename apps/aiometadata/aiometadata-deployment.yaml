@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiometadata
+  namespace: stremio
+  labels:
+    app: aiometadata
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: aiometadata
+  template:
+    metadata:
+      labels:
+        app: aiometadata
+    spec:
+      containers:
+      - name: aiometadata
+        image: ghcr.io/cedya77/aiometadata:latest
+        ports:
+        - containerPort: 3232
+          name: http
+        envFrom:
+        - configMapRef:
+            name: aiometadata-config
+        - secretRef:
+            name: aiometadata-secret
+        volumeMounts:
+        - name: data
+          mountPath: /app/addon/data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3232
+          initialDelaySeconds: 180
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3232
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: aiometadata-data
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: aiometadata
