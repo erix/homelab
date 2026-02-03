@@ -1,0 +1,161 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ib-gateway
+  namespace: default
+  labels:
+    app: ib-gateway
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # Only one instance allowed per IBKR account
+  selector:
+    matchLabels:
+      app: ib-gateway
+  template:
+    metadata:
+      labels:
+        app: ib-gateway
+    spec:
+      # Spread across nodes for stability
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: ib-gateway
+
+      # Init container fetches credentials from 1Password
+      initContainers:
+        - name: fetch-secrets
+          image: 1password/op:2
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Fetching IBKR credentials from 1Password..."
+              
+              # Fetch credentials and write to tmpfs
+              op read "op://K8S/interactivebrokers/username" > /secrets/TWS_USERID
+              op read "op://K8S/interactivebrokers/password" > /secrets/TWS_PASSWORD
+              
+              # Fetch trading mode (default to paper if not set)
+              op read "op://K8S/interactivebrokers/trading_mode" > /secrets/TRADING_MODE 2>/dev/null || echo "paper" > /secrets/TRADING_MODE
+              
+              echo "Credentials fetched successfully"
+              
+              # Make readable by all (tmpfs is pod-scoped, so this is safe)
+              chmod 444 /secrets/*
+          env:
+            - name: OP_SERVICE_ACCOUNT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: op-service-account
+                  key: token
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
+      containers:
+        - name: ib-gateway
+          image: ghcr.io/gnzsnz/ib-gateway:stable
+          imagePullPolicy: Always
+          # Read credentials from files and export as env vars
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              export TWS_USERID=$(cat /secrets/TWS_USERID)
+              export TWS_PASSWORD=$(cat /secrets/TWS_PASSWORD)
+              export TRADING_MODE=$(cat /secrets/TRADING_MODE 2>/dev/null || echo "paper")
+              echo "Starting IB Gateway as $TWS_USERID in $TRADING_MODE mode"
+              exec /home/ibgateway/scripts/run.sh
+          ports:
+            # gnzsnz/ib-gateway uses socat relay: 4003=paper, 4004=live
+            - containerPort: 4003
+              name: api-paper
+              protocol: TCP
+            - containerPort: 4004
+              name: api-live
+              protocol: TCP
+            - containerPort: 5900
+              name: vnc
+              protocol: TCP
+          env:
+            # Credentials are read from /secrets/* files in the command above
+            # Security settings
+            - name: READ_ONLY_API
+              value: "true"
+            - name: TWS_ACCEPT_INCOMING
+              value: "true"
+            # Session handling
+            - name: EXISTING_SESSION_DETECTED_ACTION
+              value: "primary"
+            - name: RELOGIN_AFTER_TWOFA_TIMEOUT
+              value: "yes"
+            - name: TWOFA_TIMEOUT_ACTION
+              value: "restart"
+            # Timezone
+            - name: TZ
+              value: "Europe/Berlin"
+            - name: TIME_ZONE
+              value: "Europe/Berlin"
+            # Optional VNC for debugging
+            - name: VNC_SERVER_PASSWORD
+              value: "debug123"
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+            # TODO: Re-enable once we figure out proper persistent storage
+            # - name: tws-settings
+            #   mountPath: /home/ibgateway/Jts
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          # Health checks - be generous, IB Gateway is slow to start
+          startupProbe:
+            tcpSocket:
+              port: 4004  # Paper trading socat port
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            failureThreshold: 30  # 5 minutes to start
+          livenessProbe:
+            tcpSocket:
+              port: 4004
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          readinessProbe:
+            tcpSocket:
+              port: 4004
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+      volumes:
+        # tmpfs volume - credentials exist only in RAM
+        - name: secrets
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        # TODO: Re-enable once we figure out proper persistent storage
+        # - name: tws-settings
+        #   persistentVolumeClaim:
+        #     claimName: ib-gateway-config-pvc
+
+      restartPolicy: Always

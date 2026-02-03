@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ib-gateway
+  namespace: default
+  labels:
+    app: ib-gateway
+  annotations:
+    metallb.universe.tf/allow-shared-ip: "ib-gateway"
+spec:
+  type: LoadBalancer
+  selector:
+    app: ib-gateway
+  ports:
+    # Paper trading API (currently active)
+    # gnzsnz image: internal 4002 -> socat -> external 4004
+    - name: api-paper
+      port: 4001        # External: what clients connect to
+      targetPort: 4004  # Container: socat relay port for paper
+      protocol: TCP
+    # Live trading API (for future use)
+    # gnzsnz image: internal 4001 -> socat -> external 4003
+    - name: api-live
+      port: 4002        # External: what clients connect to  
+      targetPort: 4003  # Container: socat relay port for live
+      protocol: TCP
+    - name: vnc
+      port: 5900
+      targetPort: 5900
+      protocol: TCP
