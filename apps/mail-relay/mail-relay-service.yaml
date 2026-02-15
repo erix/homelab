@@ -4,7 +4,10 @@ metadata:
   name: mail-relay
   labels:
     app: mail-relay
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.11.225
 spec:
+  type: LoadBalancer
   selector:
     app: mail-relay
   ports:
