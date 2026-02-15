@@ -1,0 +1,162 @@
+direction: down
+
+title: Tailscale-Exposed K8s Services {
+  near: top-center
+  shape: text
+  style.font-size: 24
+  style.bold: true
+}
+
+# External Clients
+clients: External Access {
+  style.fill: "#e3f2fd"
+  style.stroke: "#1976d2"
+  
+  laptop: Laptop {
+    shape: rectangle
+    style.fill: "#bbdefb"
+  }
+  
+  phone: Phone {
+    shape: rectangle
+    style.fill: "#bbdefb"
+  }
+  
+  tradelens: TradeLens\n(Railway) {
+    shape: cloud
+    style.fill: "#4285f4"
+  }
+}
+
+# Tailscale Network
+tailnet: Tailscale Network\n(WireGuard-encrypted mesh) {
+  shape: rectangle
+  style.fill: "#fce4ec"
+  style.stroke: "#c2185b"
+  style.border-radius: 8
+  style.stroke-width: 3
+  
+  ts_note: "Zero-trust • MagicDNS • End-to-end encrypted" {
+    shape: text
+    style.font-size: 12
+    style.italic: true
+  }
+}
+
+# K8s Cluster with Tailscale Operator
+k8s: K8s Homelab Cluster {
+  style.fill: "#e8f5e9"
+  style.stroke: "#388e3c"
+  style.border-radius: 8
+  
+  ts_operator: Tailscale Operator {
+    shape: hexagon
+    style.fill: "#f8bbd0"
+    style.stroke: "#c2185b"
+  }
+  
+  # Exposed Services
+  services: Exposed Services {
+    style.fill: "#fff3e0"
+    style.stroke: "#f57c00"
+    
+    ib_gateway: IB Gateway\nib-gateway.tailnet.ts.net\n:4001 (paper trading) {
+      shape: rectangle
+      style.fill: "#b39ddb"
+      style.stroke: "#5e35b1"
+    }
+    
+    rancher: Rancher\nrancher.tailnet.ts.net\n(K8s management) {
+      shape: rectangle
+      style.fill: "#80deea"
+      style.stroke: "#00838f"
+    }
+    
+    longhorn: Longhorn UI\nlonghorn.tailnet.ts.net\n(storage mgmt) {
+      shape: rectangle
+      style.fill: "#ffab91"
+      style.stroke: "#d84315"
+    }
+    
+    grafana: Grafana\ngrafana.tailnet.ts.net\n(monitoring) {
+      shape: rectangle
+      style.fill: "#f48fb1"
+      style.stroke: "#c2185b"
+    }
+  }
+  
+  # LoadBalancer Layer
+  metallb: MetalLB\nLoadBalancer Pool\n192.168.11.200-250 {
+    shape: hexagon
+    style.fill: "#c5e1a5"
+    style.stroke: "#558b2f"
+  }
+  
+  # Internal Services
+  internal: Internal Cluster Services {
+    style.fill: "#fff9c4"
+    style.stroke: "#f9a825"
+    
+    ha: Home Assistant\n192.168.11.212 {
+      shape: rectangle
+      style.fill: "#81c784"
+    }
+    
+    pihole: Pi-hole\n192.168.11.222 {
+      shape: rectangle
+      style.fill: "#64b5f6"
+    }
+    
+    unifi: Unifi\n192.168.11.205 {
+      shape: rectangle
+      style.fill: "#4db6ac"
+    }
+  }
+}
+
+# External Service
+ibkr_cloud: Interactive Brokers\nAPI Gateway {
+  shape: cloud
+  style.fill: "#d1c4e9"
+  style.stroke: "#673ab7"
+}
+
+# Connections
+clients.laptop -> tailnet: Tailscale client
+clients.phone -> tailnet: Tailscale app
+clients.tradelens -> tailnet: Tailscale\nsubnet router
+
+tailnet -> k8s.ts_operator: MagicDNS\nrouting
+
+k8s.ts_operator -> k8s.services.ib_gateway: Expose
+k8s.ts_operator -> k8s.services.rancher: Expose
+k8s.ts_operator -> k8s.services.longhorn: Expose
+k8s.ts_operator -> k8s.services.grafana: Expose
+
+k8s.services -> k8s.metallb: Load balance
+
+k8s.services.ib_gateway -> ibkr_cloud: API calls
+
+# Benefits
+benefits: Security Benefits {
+  style.fill: "#fffde7"
+  style.stroke: "#f57f17"
+  style.border-radius: 8
+  
+  list: "✓ No firewall port forwarding\n✓ No public IP exposure\n✓ Zero-trust authentication\n✓ End-to-end encryption\n✓ No VPN complexity\n✓ Automatic HTTPS/TLS\n✓ MagicDNS (no IP management)" {
+    shape: text
+    style.font-size: 12
+  }
+}
+
+# Use Cases
+usecases: Use Cases {
+  style.fill: "#e8eaf6"
+  style.stroke: "#3f51b5"
+  style.border-radius: 8
+  
+  list: "🏦 TradeLens remote trading access\n🖥️ Cluster management from anywhere\n📊 Monitoring dashboards on-the-go\n💾 Storage health checks" {
+    shape: text
+    style.font-size: 12
+  }
+}

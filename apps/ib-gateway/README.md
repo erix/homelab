@@ -2,19 +2,19 @@
 
 Runs IB Gateway in a container with secure credential handling via 1Password.
 
+## Architecture
+
+![IB Gateway Architecture](architecture.svg)
+
 ## Security Model
 
 Credentials are **never stored in Kubernetes** — they're fetched from 1Password at pod startup and exist only in memory (tmpfs).
 
-```
-1Password Vault (encrypted at rest)
-        ↓
-Init Container (fetches credentials)
-        ↓
-tmpfs Volume (RAM only, never persisted)
-        ↓
-IB Gateway Container (reads from tmpfs)
-```
+**Security Flow:**
+1. Init container fetches credentials from 1Password vault (encrypted at rest)
+2. Credentials written to tmpfs volume (RAM only, never persisted to disk)
+3. IB Gateway container reads credentials from tmpfs
+4. On pod restart/deletion, tmpfs is wiped (credentials never survive)
 
 ## Prerequisites
 

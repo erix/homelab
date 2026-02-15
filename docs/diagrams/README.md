@@ -6,6 +6,8 @@ Beautiful, modern architecture diagrams created with [D2](https://d2lang.com/) -
 
 - `architecture.d2` - Main cluster architecture with nodes, namespaces, and infrastructure
 - `network-endpoints.d2` - Network endpoints, LoadBalancer IPs, and ingress routes
+- `tailscale-services.d2` - Tailscale-exposed services and secure remote access architecture
+- `storage-architecture.d2` - Longhorn distributed storage with 3-way replication
 
 ## Installation
 
@@ -89,9 +91,13 @@ echo "✓ architecture.svg generated"
 d2 network-endpoints.d2 network-endpoints.svg
 echo "✓ network-endpoints.svg generated"
 
-echo "Done! Add these to your README:"
-echo "  ![Architecture](diagrams/architecture.svg)"
-echo "  ![Network Endpoints](diagrams/network-endpoints.svg)"
+d2 tailscale-services.d2 tailscale-services.svg
+echo "✓ tailscale-services.svg generated"
+
+d2 storage-architecture.d2 storage-architecture.svg
+echo "✓ storage-architecture.svg generated"
+
+echo "Done! All diagrams rendered to SVG."
 ```
 
 Make it executable:

@@ -38,11 +38,11 @@ spec:
               echo "Fetching IBKR credentials from 1Password..."
               
               # Fetch credentials and write to tmpfs
-              op read "op://K8S/interactivebrokers/username" > /secrets/TWS_USERID
-              op read "op://K8S/interactivebrokers/password" > /secrets/TWS_PASSWORD
+              op read "op://K8s/InteractiveBrokers - Paper/username" > /secrets/TWS_USERID
+              op read "op://K8s/InteractiveBrokers - Paper/password" > /secrets/TWS_PASSWORD
               
               # Fetch trading mode (default to paper if not set)
-              op read "op://K8S/interactivebrokers/trading_mode" > /secrets/TRADING_MODE 2>/dev/null || echo "paper" > /secrets/TRADING_MODE
+              op read "op://K8s/InteractiveBrokers - Paper/trading_mode" > /secrets/TRADING_MODE 2>/dev/null || echo "paper" > /secrets/TRADING_MODE
               
               echo "Credentials fetched successfully"
               
@@ -126,23 +126,23 @@ spec:
               memory: "2Gi"
               cpu: "1000m"
           # Health checks - be generous, IB Gateway is slow to start
-          # NOTE: Use 4004 for paper, 4003 for live
+          # NOTE: Port 4004=paper socat, 4003=live socat
           startupProbe:
             tcpSocket:
-              port: 4003  # Live trading socat port
+              port: 4004  # Paper trading socat port
             initialDelaySeconds: 120
             periodSeconds: 10
             failureThreshold: 30  # 5 minutes to start
           livenessProbe:
             tcpSocket:
-              port: 4003
+              port: 4004
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 10
             failureThreshold: 5
           readinessProbe:
             tcpSocket:
-              port: 4003
+              port: 4004
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5

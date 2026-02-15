@@ -1,0 +1,140 @@
+direction: right
+
+# External Services
+tradelens: TradeLens App\n(Railway) {
+  shape: cloud
+  style.fill: "#4285f4"
+  style.stroke: "#1565c0"
+}
+
+onepassword: 1Password Vault {
+  shape: cylinder
+  style.fill: "#0094f5"
+  style.stroke: "#004d7a"
+  
+  ibkr_creds: IBKR Credentials\n(encrypted) {
+    shape: document
+    style.fill: "#b3e5fc"
+  }
+}
+
+# Tailscale Network Layer
+tailscale: Tailscale Network {
+  shape: rectangle
+  style.fill: "#fce4ec"
+  style.stroke: "#c2185b"
+  style.border-radius: 8
+}
+
+# Kubernetes Cluster
+k8s: K8s Homelab Cluster {
+  style.fill: "#e8f5e9"
+  style.stroke: "#388e3c"
+  style.border-radius: 8
+  
+  # LoadBalancer
+  metallb: MetalLB\nLoadBalancer\n192.168.11.206:4001 {
+    shape: hexagon
+    style.fill: "#bbdefb"
+    style.stroke: "#1976d2"
+  }
+  
+  # IB Gateway Pod
+  pod: IB Gateway Pod {
+    style.fill: "#fff3e0"
+    style.stroke: "#f57c00"
+    style.border-radius: 8
+    
+    # Init Container
+    init: Init Container\n(1Password CLI) {
+      shape: rectangle
+      style.fill: "#ffccbc"
+      style.stroke: "#d84315"
+    }
+    
+    # tmpfs Volume (in-memory)
+    tmpfs: tmpfs Volume\n(RAM only) {
+      shape: cylinder
+      style.fill: "#ffebee"
+      style.stroke: "#c62828"
+      
+      creds_file: jts.ini\n(username/password) {
+        shape: document
+        style.fill: "#ffcdd2"
+      }
+    }
+    
+    # Socat Proxy
+    socat: socat Proxy\n:4004 → :4002 {
+      shape: rectangle
+      style.fill: "#c5e1a5"
+      style.stroke: "#558b2f"
+    }
+    
+    # IB Gateway Container
+    gateway: IB Gateway\nContainer\n:4002 (paper) {
+      shape: rectangle
+      style.fill: "#b39ddb"
+      style.stroke: "#5e35b1"
+    }
+  }
+}
+
+# Interactive Brokers
+ibkr: Interactive Brokers\nAPI Gateway {
+  shape: cloud
+  style.fill: "#d1c4e9"
+  style.stroke: "#673ab7"
+}
+
+# Connection Flow
+tradelens -> tailscale: HTTPS\n(secure tunnel)
+tailscale -> k8s.metallb: TCP :4001
+k8s.metallb -> k8s.pod.socat: Forward
+
+# Pod Internal Flow
+k8s.pod.init -> onepassword: Fetch credentials\nat startup {
+  style.stroke-dash: 3
+}
+
+k8s.pod.init -> k8s.pod.tmpfs.creds_file: Write to\ntmpfs {
+  style.stroke: "#e53935"
+  style.stroke-width: 2
+}
+
+k8s.pod.gateway -> k8s.pod.tmpfs.creds_file: Read credentials\n(memory only) {
+  style.stroke-dash: 3
+}
+
+k8s.pod.socat -> k8s.pod.gateway: Proxy :4004 → :4002
+
+k8s.pod.gateway -> ibkr: API Requests\n(paper trading) {
+  style.stroke: "#5e35b1"
+  style.stroke-width: 2
+}
+
+# Security Notes
+notes: Security Features {
+  shape: rectangle
+  style.fill: "#fffde7"
+  style.stroke: "#f57f17"
+  style.border-radius: 8
+  
+  note1: "✓ No secrets in k8s\n✓ Credentials in RAM only\n✓ Encrypted at rest in 1Password\n✓ Read-only API mode\n✓ Tailscale encryption" {
+    shape: text
+  }
+}
+
+# Legend
+legend: Connection Types {
+  style.fill: "#f5f5f5"
+  style.stroke: "#9e9e9e"
+  
+  solid: "━━━ Active data flow" {
+    shape: text
+  }
+  
+  dashed: "┄┄┄ One-time setup" {
+    shape: text
+  }
+}

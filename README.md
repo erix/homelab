@@ -16,11 +16,23 @@ This repository contains Kubernetes manifests and Helm charts for a self-hosted 
 
 ## Architecture
 
-![K3s Homelab Architecture](diagrams/architecture.svg)
+![K3s Homelab Architecture](docs/diagrams/architecture.svg)
 
 ## Service Endpoints
 
-![Network Endpoints](diagrams/network-endpoints.svg)
+![Network Endpoints](docs/diagrams/network-endpoints.svg)
+
+## Tailscale Integration
+
+![Tailscale Services](docs/diagrams/tailscale-services.svg)
+
+Selected services are exposed via Tailscale for secure remote access without port forwarding or VPN complexity. The Tailscale Kubernetes operator handles service exposure with automatic MagicDNS routing and end-to-end encryption.
+
+## Storage Architecture
+
+![Storage Architecture](docs/diagrams/storage-architecture.svg)
+
+Longhorn provides distributed block storage with 3-way replication across cluster nodes. Each volume is automatically replicated to three different nodes for high availability and fault tolerance.
 
 ## Key Features
 

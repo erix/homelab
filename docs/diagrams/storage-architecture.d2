@@ -1,0 +1,289 @@
+direction: down
+
+title: Storage Architecture - Longhorn Distributed Storage {
+  near: top-center
+  shape: text
+  style.font-size: 24
+  style.bold: true
+}
+
+# Applications Layer
+apps: Application Pods {
+  style.fill: "#e3f2fd"
+  style.stroke: "#1976d2"
+  
+  ha_pod: Home Assistant {
+    shape: rectangle
+    style.fill: "#81c784"
+    style.stroke: "#388e3c"
+  }
+  
+  db_pod: MariaDB {
+    shape: rectangle
+    style.fill: "#64b5f6"
+    style.stroke: "#1976d2"
+  }
+  
+  media_pod: Overseerr {
+    shape: rectangle
+    style.fill: "#ba68c8"
+    style.stroke: "#7b1fa2"
+  }
+}
+
+# PVC Layer
+pvcs: Persistent Volume Claims (PVCs) {
+  style.fill: "#fff3e0"
+  style.stroke: "#f57c00"
+  
+  pvc1: ha-config-pvc\n10Gi {
+    shape: cylinder
+    style.fill: "#ffcc80"
+  }
+  
+  pvc2: mariadb-data-pvc\n20Gi {
+    shape: cylinder
+    style.fill: "#ffcc80"
+  }
+  
+  pvc3: overseerr-data-pvc\n5Gi {
+    shape: cylinder
+    style.fill: "#ffcc80"
+  }
+}
+
+# Longhorn Controller
+longhorn: |md
+  **Longhorn Manager**
+  
+  Orchestrates volumes
+  Manages replicas
+  Handles snapshots
+| {
+  shape: hexagon
+  style.fill: "#ffab91"
+  style.stroke: "#d84315"
+}
+
+# Cluster Nodes
+cluster: K8s Cluster Nodes {
+  style.fill: "#e8f5e9"
+  style.stroke: "#388e3c"
+  
+  # Node 1
+  node1: homelab-control\n192.168.11.11 {
+    style.fill: "#c8e6c9"
+    style.stroke: "#558b2f"
+    
+    disk1: /var/lib/longhorn\n50GB available {
+      shape: cylinder
+      style.fill: "#aed581"
+    }
+    
+    replica1a: Replica 1a\n(ha-config) {
+      shape: rectangle
+      style.fill: "#dce775"
+    }
+    
+    replica2a: Replica 2a\n(mariadb) {
+      shape: rectangle
+      style.fill: "#fff176"
+    }
+  }
+  
+  # Node 2
+  node2: homelab-02\n192.168.11.12 {
+    style.fill: "#c8e6c9"
+    style.stroke: "#558b2f"
+    
+    disk2: /var/lib/longhorn\n50GB available {
+      shape: cylinder
+      style.fill: "#aed581"
+    }
+    
+    replica1b: Replica 1b\n(ha-config) {
+      shape: rectangle
+      style.fill: "#dce775"
+    }
+    
+    replica3a: Replica 3a\n(overseerr) {
+      shape: rectangle
+      style.fill: "#f48fb1"
+    }
+  }
+  
+  # Node 3
+  node3: homelab-03\n192.168.11.13 {
+    style.fill: "#c8e6c9"
+    style.stroke: "#558b2f"
+    
+    disk3: /var/lib/longhorn\n50GB available {
+      shape: cylinder
+      style.fill: "#aed581"
+    }
+    
+    replica1c: Replica 1c\n(ha-config) {
+      shape: rectangle
+      style.fill: "#dce775"
+    }
+    
+    replica2b: Replica 2b\n(mariadb) {
+      shape: rectangle
+      style.fill: "#fff176"
+    }
+    
+    replica3b: Replica 3b\n(overseerr) {
+      shape: rectangle
+      style.fill: "#f48fb1"
+    }
+  }
+  
+  # Node 4
+  node4: homelab-04\n192.168.11.14 {
+    style.fill: "#c8e6c9"
+    style.stroke: "#558b2f"
+    
+    disk4: /var/lib/longhorn\n50GB available {
+      shape: cylinder
+      style.fill: "#aed581"
+    }
+    
+    replica2c: Replica 2c\n(mariadb) {
+      shape: rectangle
+      style.fill: "#fff176"
+    }
+    
+    replica3c: Replica 3c\n(overseerr) {
+      shape: rectangle
+      style.fill: "#f48fb1"
+    }
+  }
+}
+
+# NFS Storage
+nfs: External NFS Storage {
+  style.fill: "#f3e5f5"
+  style.stroke: "#7b1fa2"
+  
+  nfs_server: NFS Server\n(books, media, downloads) {
+    shape: cylinder
+    style.fill: "#ce93d8"
+  }
+}
+
+# Connections - Apps to PVCs
+apps.ha_pod -> pvcs.pvc1: mounts
+apps.db_pod -> pvcs.pvc2: mounts
+apps.media_pod -> pvcs.pvc3: mounts
+
+# PVCs to Longhorn
+pvcs.pvc1 -> longhorn: requests
+pvcs.pvc2 -> longhorn: requests
+pvcs.pvc3 -> longhorn: requests
+
+# Longhorn to Replicas
+longhorn -> cluster.node1.replica1a: Volume 1\n3-way replication {
+  style.stroke: "#81c784"
+  style.stroke-width: 2
+}
+longhorn -> cluster.node2.replica1b {
+  style.stroke: "#81c784"
+  style.stroke-width: 2
+}
+longhorn -> cluster.node3.replica1c {
+  style.stroke: "#81c784"
+  style.stroke-width: 2
+}
+
+longhorn -> cluster.node1.replica2a: Volume 2\n3-way replication {
+  style.stroke: "#64b5f6"
+  style.stroke-width: 2
+}
+longhorn -> cluster.node3.replica2b {
+  style.stroke: "#64b5f6"
+  style.stroke-width: 2
+}
+longhorn -> cluster.node4.replica2c {
+  style.stroke: "#64b5f6"
+  style.stroke-width: 2
+}
+
+longhorn -> cluster.node2.replica3a: Volume 3\n3-way replication {
+  style.stroke: "#ba68c8"
+  style.stroke-width: 2
+}
+longhorn -> cluster.node3.replica3b {
+  style.stroke: "#ba68c8"
+  style.stroke-width: 2
+}
+longhorn -> cluster.node4.replica3c {
+  style.stroke: "#ba68c8"
+  style.stroke-width: 2
+}
+
+# Replicas to Disks
+cluster.node1.replica1a -> cluster.node1.disk1
+cluster.node1.replica2a -> cluster.node1.disk1
+
+cluster.node2.replica1b -> cluster.node2.disk2
+cluster.node2.replica3a -> cluster.node2.disk2
+
+cluster.node3.replica1c -> cluster.node3.disk3
+cluster.node3.replica2b -> cluster.node3.disk3
+cluster.node3.replica3b -> cluster.node3.disk3
+
+cluster.node4.replica2c -> cluster.node4.disk4
+cluster.node4.replica3c -> cluster.node4.disk4
+
+# NFS to some apps (bypassing Longhorn)
+nfs.nfs_server -> apps.media_pod: Direct NFS mount\n(large media files) {
+  style.stroke-dash: 3
+  style.stroke: "#7b1fa2"
+}
+
+# Features
+features: |md
+  **Longhorn Features**
+  
+  ✓ 3-way replication (data on 3 nodes)
+  ✓ Automatic failover on node failure
+  ✓ Point-in-time snapshots
+  ✓ Volume backup & restore
+  ✓ Web UI at 192.168.11.201
+  ✓ ReadWriteOnce & ReadWriteMany
+  ✓ Dynamic provisioning
+| {
+  style.fill: "#fffde7"
+  style.stroke: "#f57f17"
+  style.border-radius: 8
+}
+
+# Storage Classes
+classes: |md
+  **Storage Classes**
+  
+  • longhorn (default)
+  • longhorn-static
+  • longhorn-db-storage
+  • nfs-books-csi
+  • nfs-downloads-csi
+  • smb
+| {
+  style.fill: "#e8eaf6"
+  style.stroke: "#3f51b5"
+  style.border-radius: 8
+}
+
+# Disaster Recovery
+dr: |md
+  **Disaster Recovery Scenarios**
+  
+  • Node failure → 2 replicas remain
+  • 2 nodes fail → 1 replica (degraded)
+  • Volume rebuild → auto-replication
+  • Data loss → restore from snapshot
+| {
+  style.fill: "#ffebee"
+  style.stroke: "#c62828"
+  style.border-radius: 8
+}
