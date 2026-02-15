@@ -385,7 +385,291 @@ StatefulSets (Prometheus, Alertmanager) remain at 1 replica. The **operator** de
 - Deployment Strategies: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
 - High Availability Best Practices: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/ha-topology/
 
+## Tailscale Kubernetes Operator - Secure Remote Access
+
+### Overview
+
+The Tailscale Kubernetes Operator provides secure, zero-trust network access to your cluster services from anywhere, without exposing them to the public internet. Services are accessible through your private Tailscale network (Tailnet) with end-to-end encryption.
+
+**Status**: ✅ Deployed and operational
+
+### What is Tailscale?
+
+Tailscale creates a secure mesh VPN using WireGuard. The Kubernetes operator allows you to expose cluster services directly to your Tailnet by simply adding an annotation.
+
+### Installation
+
+The Tailscale operator is fully configured and running. See `/Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale/` for configuration files.
+
+**Components deployed:**
+- Tailscale Operator (manages service exposure)
+- OAuth authentication (sealed secret)
+- Custom Resource Definitions (CRDs) for advanced features
+- RBAC permissions
+
+**Requirements met:**
+- ✅ Tailscale OAuth client configured with required scopes (`devices:write`, `auth_keys:write`)
+- ✅ Tailscale ACL configured with `tag:k8s-operator` and `tag:k8s` owned by `autogroup:admin`
+- ✅ Sealed secret for OAuth credentials
+
+### Exposing Services
+
+To make any service accessible through Tailscale, simply add an annotation:
+
+#### Method 1: Command Line
+
+```bash
+kubectl annotate service <service-name> -n <namespace> tailscale.com/expose=true
+```
+
+**Example:**
+```bash
+kubectl annotate service home-assistant -n home-assistant tailscale.com/expose=true
+```
+
+#### Method 2: YAML Manifest
+
+Add the annotation to your service definition:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  namespace: default
+  annotations:
+    tailscale.com/expose: "true"
+spec:
+  type: ClusterIP  # Works with ClusterIP, LoadBalancer, or NodePort
+  selector:
+    app: my-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+```
+
+#### Optional: Custom Hostname
+
+Set a custom hostname instead of the default `<namespace>-<service>` format:
+
+```yaml
+metadata:
+  annotations:
+    tailscale.com/expose: "true"
+    tailscale.com/hostname: "my-custom-name"
+```
+
+This creates `my-custom-name.<tailnet>.ts.net` instead of `default-my-service.<tailnet>.ts.net`.
+
+### What Happens When You Expose a Service
+
+1. **Operator Detects**: The Tailscale operator watches for services with the `tailscale.com/expose` annotation
+2. **Proxy Created**: Automatically creates a Tailscale proxy pod (`ts-<namespace>-<service>-xxxxx-0`) in the `tailscale` namespace
+3. **Tailnet Registration**: Registers the proxy on your Tailnet with tags `tag:k8s`
+4. **DNS Assignment**: Assigns a hostname: `<namespace>-<service>.<tailnet>.ts.net`
+5. **Ready**: Service is immediately accessible from any device on your Tailscale network
+
+### Currently Exposed Services
+
+| Service | Namespace | Tailscale Hostname | Tailscale IP | Ports | Purpose |
+|---------|-----------|-------------------|--------------|-------|---------|
+| ib-gateway | default | `default-ib-gateway.tail9139a.ts.net` | `100.77.222.105` | 4001, 4002, 5900 | Interactive Brokers Gateway |
+
+### Verifying Service Exposure
+
+#### Check Tailscale Proxy Pod
+
+```bash
+# List all Tailscale proxies
+kubectl get pods -n tailscale
+
+# Expected output:
+# NAME                       READY   STATUS    RESTARTS   AGE
+# operator-xxx               1/1     Running   0          1h
+# ts-default-myservice-0     1/1     Running   0          5m
+```
+
+#### Get Tailscale Hostname
+
+```bash
+# From inside the proxy pod
+kubectl exec -n tailscale ts-<service>-xxxxx-0 -c tailscale -- tailscale status
+
+# Look for your service in the output:
+# 100.x.x.x  <namespace>-<service>    <namespace>-<service>.<tailnet>.ts.net  linux  -
+```
+
+#### Test Access
+
+From any device on your Tailscale network:
+
+```bash
+# Using hostname
+curl http://<namespace>-<service>.<tailnet>.ts.net:<port>
+
+# Using Tailscale IP
+curl http://100.x.x.x:<port>
+```
+
+### Removing Tailscale Exposure
+
+Simply remove the annotation:
+
+```bash
+kubectl annotate service <service-name> -n <namespace> tailscale.com/expose-
+```
+
+The operator will automatically:
+- Remove the Tailscale proxy pod
+- Unregister the device from your Tailnet
+- Clean up associated resources
+
+### Operator Management
+
+#### Check Operator Status
+
+```bash
+kubectl get pods -n tailscale -l app=operator
+```
+
+#### View Operator Logs
+
+```bash
+kubectl logs -n tailscale -l app=operator -f
+```
+
+#### Restart Operator
+
+```bash
+kubectl rollout restart deployment/operator -n tailscale
+```
+
+### Security Considerations
+
+**✅ Advantages:**
+- Zero-trust network access (device authentication required)
+- End-to-end encryption (WireGuard)
+- No public internet exposure
+- No port forwarding or firewall rules needed
+- MagicDNS for easy hostname resolution
+- Audit logs in Tailscale admin console
+
+**⚠️ Best Practices:**
+- Only expose services that need remote access
+- Use Tailscale ACLs to restrict access to specific users/devices
+- Regularly review exposed services: `kubectl get svc -A -o json | jq '.items[] | select(.metadata.annotations."tailscale.com/expose" == "true") | {namespace:.metadata.namespace, name:.metadata.name}'`
+- Monitor Tailscale admin console for unexpected devices
+
+### Tailscale ACL Configuration
+
+Your current ACL includes these tags for Kubernetes services:
+
+```json
+{
+  "tagOwners": {
+    "tag:k8s-operator": ["autogroup:admin"],
+    "tag:k8s": ["autogroup:admin"]
+  }
+}
+```
+
+**Tags explained:**
+- `tag:k8s-operator`: Used by the Tailscale operator pod itself
+- `tag:k8s`: Applied to all service proxy pods
+- `autogroup:admin`: Allows any admin to create devices with these tags
+
+### Troubleshooting
+
+#### Proxy Pod Not Created
+
+**Check:**
+1. Annotation is correct: `kubectl get svc <service> -n <namespace> -o yaml | grep tailscale`
+2. Operator is running: `kubectl get pods -n tailscale -l app=operator`
+3. Operator logs: `kubectl logs -n tailscale -l app=operator --tail=50`
+
+#### Proxy Pod CrashLoopBackOff
+
+**Common causes:**
+1. **OAuth credentials expired/invalid**: Check sealed secret was unsealed properly
+   ```bash
+   kubectl get secret operator-oauth -n tailscale
+   ```
+2. **ACL tags not configured**: Verify tags exist in Tailscale admin console
+3. **OAuth scopes missing**: Ensure client has `devices:write` and `auth_keys:write`
+
+#### Can't Access Service from Tailscale
+
+**Check:**
+1. Device is connected to Tailscale: `tailscale status`
+2. MagicDNS is enabled: `tailscale status | grep MagicDNS`
+3. Service proxy is running: `kubectl get pods -n tailscale | grep ts-<service>`
+4. Correct port is being used
+5. Service itself is healthy: `kubectl get pods -n <namespace>`
+
+### Maintenance
+
+#### After Operator Updates
+
+If you reinstall or update the Tailscale operator:
+
+```bash
+cd /Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale
+
+# Reapply sealed OAuth secret
+kubectl apply -f operator-oauth-sealed.yaml
+
+# Restart operator
+kubectl rollout restart deployment/operator -n tailscale
+```
+
+#### Updating OAuth Credentials
+
+1. Generate new OAuth client in Tailscale admin console
+2. Update `/Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale/operator-secret.yaml` with new credentials
+3. Seal the secret:
+   ```bash
+   cd /Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale
+   kubeseal -f operator-secret.yaml -w operator-oauth-sealed.yaml
+   ```
+4. Apply and restart:
+   ```bash
+   kubectl apply -f operator-oauth-sealed.yaml
+   kubectl rollout restart deployment/operator -n tailscale
+   ```
+
+### Advanced Features
+
+The operator supports additional features via CRDs:
+
+- **Connector**: Deploy Tailscale subnet routers or exit nodes
+- **ProxyClass**: Define reusable proxy configurations
+- **DNSConfig**: Customize DNS settings
+- **Recorder**: Configure traffic recording
+
+See official Tailscale documentation for details: https://tailscale.com/kb/1236/kubernetes-operator
+
+### Files in Tailscale Directory
+
+- `/Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale/`
+  - `namespace.yaml` - Tailscale namespace
+  - `operator-rbac.yaml` - RBAC permissions (managed by official manifest)
+  - `operator-deployment.yaml` - Operator deployment (managed by official manifest)
+  - `operator-secret.yaml` - Plaintext OAuth secret template (DO NOT COMMIT)
+  - `operator-oauth-sealed.yaml` - Sealed OAuth secret (safe to commit)
+  - `ib-gateway-service-patch.yaml` - Example service with Tailscale annotation
+  - `README.md` - Detailed setup guide
+
+### References
+
+- Tailscale Kubernetes Operator: https://tailscale.com/kb/1236/kubernetes-operator
+- Tailscale ACLs: https://tailscale.com/kb/1018/acls
+- OAuth Clients: https://tailscale.com/kb/1215/oauth-clients
+
+---
+
 ## Files in This Directory
 
 - **README.md** (this file) - Comprehensive HA documentation
 - **apply-ha-configuration.sh** - Main script to apply HA to all components
+- **tailscale/** - Tailscale Kubernetes Operator configuration

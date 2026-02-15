@@ -114,6 +114,24 @@ helm list
 helm get values <app-name>
 ```
 
+### Tailscale - Secure Remote Access
+```bash
+# Expose a service via Tailscale
+kubectl annotate service <service-name> -n <namespace> tailscale.com/expose=true
+
+# Remove Tailscale exposure
+kubectl annotate service <service-name> -n <namespace> tailscale.com/expose-
+
+# List all Tailscale proxies
+kubectl get pods -n tailscale
+
+# Check Tailscale status of a proxy
+kubectl exec -n tailscale ts-<service>-xxxxx-0 -c tailscale -- tailscale status
+
+# View all exposed services
+kubectl get svc -A -o json | jq '.items[] | select(.metadata.annotations."tailscale.com/expose" == "true") | {namespace:.metadata.namespace, name:.metadata.name}'
+```
+
 ## Current Architecture
 
 ### Cluster Nodes
@@ -130,6 +148,7 @@ helm get values <app-name>
 - **Longhorn**: Distributed storage solution with 3-way replication
 - **Cert-Manager**: SSL certificate management (Let's Encrypt + Cloudflare)
 - **Sealed Secrets**: Secret encryption (deployed via Helm)
+- **Tailscale Operator**: Secure remote access to services via Tailscale VPN (zero-trust networking)
 
 ### Storage Classes
 - **longhorn** (default): General purpose distributed storage
@@ -182,6 +201,7 @@ Each application typically includes:
 - **LoadBalancer Services**: Using MetalLB for direct access
 - **Host Networking**: Used by Home Assistant for device discovery
 - **NodePort**: Used by Pi-hole for DHCP
+- **Tailscale VPN**: Secure remote access without public exposure (annotate services with `tailscale.com/expose: "true"`)
 
 ### Deployment Methods
 1. **Manual kubectl apply**: Primary method for applying manifests
@@ -209,6 +229,7 @@ Each application typically includes:
 - **Sealed Secrets**: Use `kubeseal` to encrypt sensitive data before committing
 - **Host Networking**: Home Assistant uses host network mode for device discovery
 - **Domain**: All ingresses use `*.erix-homelab.site` with wildcard TLS certificate
+- **Tailscale Access**: Services can be exposed securely via Tailscale by adding annotation `tailscale.com/expose: "true"` (see infrastructure/tailscale/README.md)
 
 ## Troubleshooting
 

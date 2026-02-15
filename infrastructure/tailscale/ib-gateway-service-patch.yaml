@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ib-gateway
+  namespace: default
+  labels:
+    app: ib-gateway
+  annotations:
+    # Enable Tailscale exposure
+    tailscale.com/expose: "true"
+    # Optional: Set a custom hostname (otherwise uses service name)
+    # tailscale.com/hostname: "ib-gateway"
+    # Optional: Set specific tags
+    # tailscale.com/tags: "tag:k8s,tag:trading"
+    # Keep MetalLB config
+    metallb.universe.tf/allow-shared-ip: ib-gateway
+spec:
+  type: LoadBalancer
+  selector:
+    app: ib-gateway
+  ports:
+    - name: api-paper
+      port: 4001
+      protocol: TCP
+      targetPort: 4004
+    - name: api-live
+      port: 4002
+      protocol: TCP
+      targetPort: 4003
+    - name: vnc
+      port: 5900
+      protocol: TCP
+      targetPort: 5900
