@@ -16,11 +16,11 @@ This repository contains Kubernetes manifests and Helm charts for a self-hosted 
 
 ## Architecture
 
-![K3s Homelab Architecture](docs/diagrams/architecture.svg)
+![K3s Homelab Architecture](docs/diagrams/architecture.png)
 
 ## Service Endpoints
 
-![Network Endpoints](docs/diagrams/network-endpoints.svg)
+![Network Endpoints](docs/diagrams/network-endpoints.png)
 
 ## Tailscale Integration
 
