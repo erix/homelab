@@ -4,7 +4,7 @@ Runs IB Gateway in a container with secure credential handling via 1Password.
 
 ## Architecture
 
-![IB Gateway Architecture](architecture.svg)
+![IB Gateway Architecture](ib-gateway-architecture.png)
 
 ## Security Model
 

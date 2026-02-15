@@ -24,13 +24,13 @@ This repository contains Kubernetes manifests and Helm charts for a self-hosted 
 
 ## Tailscale Integration
 
-![Tailscale Services](docs/diagrams/tailscale-services.svg)
+![Tailscale Services](docs/diagrams/tailscale-services.png)
 
 Selected services are exposed via Tailscale for secure remote access without port forwarding or VPN complexity. The Tailscale Kubernetes operator handles service exposure with automatic MagicDNS routing and end-to-end encryption.
 
 ## Storage Architecture
 
-![Storage Architecture](docs/diagrams/storage-architecture.svg)
+![Storage Architecture](docs/diagrams/storage-architecture.png)
 
 Longhorn provides distributed block storage with 3-way replication across cluster nodes. Each volume is automatically replicated to three different nodes for high availability and fault tolerance.
 
