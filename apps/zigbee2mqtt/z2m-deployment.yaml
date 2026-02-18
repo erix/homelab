@@ -13,8 +13,7 @@ spec:
       labels:
         app: z2m
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: homelab-03
+      # nodeSelector removed - new cluster has single node k3s-node-01
       containers:
       - name: z2m
         image: koenkk/zigbee2mqtt:2.0.0 
