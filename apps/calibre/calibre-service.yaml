@@ -4,6 +4,8 @@ metadata:
   name: calibre-ui-service
   labels:
     app: calibre
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: "192.168.11.208"
 spec:
   selector:
     app: calibre
