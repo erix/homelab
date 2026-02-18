@@ -14,9 +14,10 @@ metadata:
   namespace: network
   annotations:
     traefik.ingress.kubernetes.io/service.serversscheme: https
+    metallb.universe.tf/loadBalancerIPs: "192.168.11.207"
 spec:
   type: LoadBalancer
-  loadBalancerIP: 192.168.11.205
+
   selector:
     app: unifi 
   ports:
