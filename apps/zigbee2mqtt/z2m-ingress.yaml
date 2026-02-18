@@ -3,6 +3,8 @@ kind: Ingress
 metadata:
   name: z2m-ingress
   namespace: home-automation
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
 spec:
   ingressClassName: traefik
   rules:

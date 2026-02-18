@@ -5,6 +5,7 @@ metadata:
   namespace: home-automation
   annotations:
     ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt
 spec:
   rules:
   - host: hass.erix-homelab.site
