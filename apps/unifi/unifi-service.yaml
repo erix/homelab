@@ -14,6 +14,7 @@ metadata:
   namespace: network
   annotations:
     traefik.ingress.kubernetes.io/service.serversscheme: https
+    traefik.ingress.kubernetes.io/service.servertransport: unifi-skip-verify@kubernetescrd
     metallb.universe.tf/loadBalancerIPs: "192.168.11.207"
 spec:
   type: LoadBalancer
