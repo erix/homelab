@@ -7,6 +7,7 @@ spec:
   interval: 10m
   path: ../../apps/aiostreams
   prune: true
+  targetNamespace: stremio
   sourceRef:
     kind: GitRepository
     name: flux-system

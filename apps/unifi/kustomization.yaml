@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - unifi-deployment.yaml
+  - unifi-service.yaml
+  - unifi-ingress.yaml
+  - mongo/mongo-deployment.yaml
+  - mongo/mongo-service.yaml
+  - mongo/mongo-pvc.yaml
+  - mongo/mongo-configMap.yaml
