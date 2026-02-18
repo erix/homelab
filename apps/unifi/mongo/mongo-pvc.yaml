@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn-db-storage
+  storageClassName: local-path
   volumeName: mongodb-sts
   resources:
     requests:

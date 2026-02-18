@@ -6,7 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: longhorn-db-storage
+  storageClassName: local-path
   resources:
     requests:
       storage: 30Gi  # Adjust size as needed 
