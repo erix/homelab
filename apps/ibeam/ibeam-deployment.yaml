@@ -59,7 +59,7 @@ spec:
               export IBEAM_ACCOUNT=$(cat /secrets/IBEAM_ACCOUNT)
               export IBEAM_PASSWORD=$(cat /secrets/IBEAM_PASSWORD)
               echo "Starting ibeam for account: $IBEAM_ACCOUNT"
-              exec python /srv/ibeam/ibeam/main.py
+              exec python /srv/ibeam/ibeam_starter.py
           ports:
             - containerPort: 5000
               name: rest-api
