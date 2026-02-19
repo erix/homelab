@@ -1,74 +1,85 @@
 # Tailscale Kubernetes Operator
 
-This directory contains the Tailscale Kubernetes Operator setup for exposing services to your Tailnet.
+Exposes cluster services to your Tailnet using the official [Tailscale Kubernetes Operator](https://tailscale.com/kb/1236/kubernetes-operator).
 
-## Setup Instructions
+Managed via **Helm** (`tailscale/tailscale-operator`).
 
-### 1. Create Tailscale OAuth Credentials
+## Prerequisites
 
-1. Go to https://login.tailscale.com/admin/settings/oauth
-2. Click "Generate OAuth client"
-3. Add the following tags: `tag:k8s`
-4. Copy the Client ID and Client Secret
+- `helm` and `kubectl` configured for the cluster
+- SealedSecrets controller running (for OAuth credential management)
+- Tailscale OAuth credentials sealed in `operator-oauth-sealed.yaml`
 
-### 2. Update the Secret
-
-Edit `operator-secret.yaml` and add your OAuth credentials:
-
-```yaml
-stringData:
-  client_id: "YOUR_CLIENT_ID"
-  client_secret: "YOUR_CLIENT_SECRET"
-```
-
-### 3. Apply the Manifests
+## Install / Re-install
 
 ```bash
-kubectl apply -f namespace.yaml
-kubectl apply -f operator-secret.yaml
-kubectl apply -f operator-rbac.yaml
-kubectl apply -f operator-deployment.yaml
+cd infrastructure/tailscale
+./install.sh
 ```
 
-### 4. Verify Installation
+The script:
+1. Applies the SealedSecret (decrypted in-cluster, never plaintext in git)
+2. Extracts the OAuth credentials from the decrypted secret
+3. Installs/upgrades the Helm release
+4. Applies service annotations for exposed services
+
+## Upgrade
+
+```bash
+helm repo update tailscale
+helm upgrade tailscale-operator tailscale/tailscale-operator \
+  --namespace tailscale \
+  --values values.yaml \
+  --reuse-values
+```
+
+## Check Status
 
 ```bash
 kubectl get pods -n tailscale
-kubectl logs -n tailscale -l app=operator
+kubectl logs -n tailscale deployment/operator --tail=30
+
+# Check Tailscale admin console for connected devices:
+# https://login.tailscale.com/admin/machines
 ```
 
 ## Exposing Services
 
-To expose a service to Tailscale, add this annotation:
+Add this annotation to any Service to expose it on your Tailnet:
 
 ```yaml
 metadata:
   annotations:
     tailscale.com/expose: "true"
+    # tailscale.com/hostname: "my-service"   # optional custom hostname
 ```
 
-The operator will automatically create a Tailscale proxy and assign a hostname.
+Or apply the pre-configured patches in this directory (e.g. `ib-gateway-service-patch.yaml`).
 
-## Example: ib-gateway
+## Recreating the OAuth Secret
 
-The ib-gateway service is already configured with Tailscale annotations.
-After applying the operator, it will be accessible at: `ib-gateway.tailnet-XXXX.ts.net`
+If you need to re-seal fresh OAuth credentials:
 
-Check the service for the assigned hostname:
+1. Go to https://login.tailscale.com/admin/settings/oauth
+2. Create a new OAuth client with `tag:k8s`
+3. Create `operator-secret.yaml` (do **not** commit this):
 
-```bash
-kubectl get svc ib-gateway -n default -o yaml | grep tailscale
-```
+   ```yaml
+   apiVersion: v1
+   kind: Secret
+   metadata:
+     name: operator-oauth
+     namespace: tailscale
+   stringData:
+     client_id: "YOUR_CLIENT_ID"
+     client_secret: "YOUR_CLIENT_SECRET"
+   ```
 
-## Troubleshooting
+4. Seal it:
 
-```bash
-# Check operator logs
-kubectl logs -n tailscale -l app=operator -f
+   ```bash
+   kubeseal -f operator-secret.yaml -w operator-oauth-sealed.yaml
+   rm operator-secret.yaml
+   ```
 
-# Check if StatefulSet was created for the proxy
-kubectl get statefulsets -A | grep ib-gateway
-
-# Check proxy pod logs
-kubectl logs -n default sts/ts-ib-gateway-ib-gateway
-```
+5. Commit the updated `operator-oauth-sealed.yaml`.
