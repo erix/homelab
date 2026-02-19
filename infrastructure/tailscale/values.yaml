@@ -1,0 +1,9 @@
+# Tailscale Operator Helm values
+# Non-secret configuration only.
+# OAuth credentials are passed at install time via --set-string (see install.sh).
+
+installCRDs: true
+
+# Operator resource limits
+operatorConfig:
+  logging: info
