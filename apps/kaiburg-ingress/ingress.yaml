@@ -77,7 +77,7 @@ spec:
     - web
     - websecure
   routes:
-  - match: Host(`gateway.erix-homelab.site`)
+  - match: Host(`openclaw.erix-homelab.site`)
     kind: Rule
     services:
     - name: kaiburg-gateway-service
