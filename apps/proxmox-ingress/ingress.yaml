@@ -1,21 +1,14 @@
-apiVersion: traefik.io/v1alpha1
-kind: ServersTransport
-metadata:
-  name: proxmox-transport
-  namespace: default
-spec:
-  insecureSkipVerify: true
-
----
 apiVersion: v1
 kind: Service
 metadata:
   name: proxmox-service
   namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/service.serversScheme: https
 spec:
   ports:
   - protocol: TCP
-    port: 443
+    port: 8006
     targetPort: 8006
 
 ---
@@ -31,24 +24,25 @@ subsets:
       - port: 8006
 
 ---
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: proxmox-route
+  name: proxmox-ingress
   namespace: default
 spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-  - match: Host(`proxmox.erix-homelab.site`)
-    kind: Rule
-    services:
-    - name: proxmox-service
-      port: 443
-      scheme: https
-      serversTransport: proxmox-transport
+  ingressClassName: traefik
+  rules:
+  - host: proxmox.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: proxmox-service
+            port:
+              number: 8006
   tls:
-    secretName: erix-homelab-site-tls
-    domains:
-    - main: erix-homelab.site
+  - secretName: erix-homelab-site-tls
+    hosts:
+    - proxmox.erix-homelab.site

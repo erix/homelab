@@ -6,7 +6,7 @@ metadata:
 spec:
   ports:
   - protocol: TCP
-    port: 80
+    port: 9001
     targetPort: 9001
 
 ---
@@ -22,22 +22,25 @@ subsets:
       - port: 9001
 
 ---
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: truenas-minio-service-route
+  name: minio-ingress
   namespace: default
 spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-  - match: Host(`minio.erix-homelab.site`)
-    kind: Rule
-    services:
-    - name: truenas-minio-service
-      port: 80
+  ingressClassName: traefik
+  rules:
+  - host: minio.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: truenas-minio-service
+            port:
+              number: 9001
   tls:
-    secretName: erix-homelab-site-tls
-    domains:
-    - main: erix-homelab.site
+  - secretName: erix-homelab-site-tls
+    hosts:
+    - minio.erix-homelab.site

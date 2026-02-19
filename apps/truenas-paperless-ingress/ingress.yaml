@@ -6,7 +6,7 @@ metadata:
 spec:
   ports:
   - protocol: TCP
-    port: 80
+    port: 30070
     targetPort: 30070
 
 ---
@@ -22,22 +22,25 @@ subsets:
       - port: 30070
 
 ---
-apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+apiVersion: networking.k8s.io/v1
+kind: Ingress
 metadata:
-  name: truenas-paperless-route
+  name: paperless-ingress
   namespace: default
 spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-  - match: Host(`paperless.erix-homelab.site`)
-    kind: Rule
-    services:
-    - name: truenas-paperless-service
-      port: 80
+  ingressClassName: traefik
+  rules:
+  - host: paperless.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: truenas-paperless-service
+            port:
+              number: 30070
   tls:
-    secretName: erix-homelab-site-tls
-    domains:
-    - main: erix-homelab.site
+  - secretName: erix-homelab-site-tls
+    hosts:
+    - paperless.erix-homelab.site
