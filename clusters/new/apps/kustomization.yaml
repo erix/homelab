@@ -24,3 +24,4 @@ resources:
   - truenas-jackettio-ingress.yaml
   - truenas-minio-ingress.yaml
   - kaiburg-ingress.yaml
+  - proxmox-ingress.yaml

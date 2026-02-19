@@ -1,0 +1,54 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: ServersTransport
+metadata:
+  name: proxmox-transport
+  namespace: default
+spec:
+  insecureSkipVerify: true
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxmox-service
+  namespace: default
+spec:
+  ports:
+  - protocol: TCP
+    port: 443
+    targetPort: 8006
+
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: proxmox-service
+  namespace: default
+subsets:
+  - addresses:
+      - ip: 192.168.11.20
+    ports:
+      - port: 8006
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: proxmox-route
+  namespace: default
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`proxmox.erix-homelab.site`)
+    kind: Rule
+    services:
+    - name: proxmox-service
+      port: 443
+      scheme: https
+      serversTransport: proxmox-transport
+  tls:
+    secretName: erix-homelab-site-tls
+    domains:
+    - main: erix-homelab.site
