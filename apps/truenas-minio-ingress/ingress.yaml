@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: truenas-minio-service
+  namespace: default
+spec:
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9001
+
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: truenas-minio-service
+  namespace: default
+subsets:
+  - addresses:
+      - ip: 192.168.1.179
+    ports:
+      - port: 9001
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: truenas-minio-service-route
+  namespace: default
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`minio.erix-homelab.site`)
+    kind: Rule
+    services:
+    - name: truenas-minio-service
+      port: 80
+  tls:
+    secretName: erix-homelab-site-tls
+    domains:
+    - main: erix-homelab.site
