@@ -18,6 +18,7 @@ resources:
   # Tools
   - n8n.yaml
   - ib-gateway.yaml
+  - ibeam.yaml
   # External Service Ingresses (TrueNAS + Kaiburg)
   - truenas-plex-ingress.yaml
   - truenas-paperless-ingress.yaml

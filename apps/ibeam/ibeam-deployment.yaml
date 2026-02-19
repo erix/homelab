@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ibeam
+  namespace: default
+  labels:
+    app: ibeam
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # Only one instance per IBKR account
+  selector:
+    matchLabels:
+      app: ibeam
+  template:
+    metadata:
+      labels:
+        app: ibeam
+    spec:
+      # Init container fetches credentials from 1Password
+      initContainers:
+        - name: fetch-secrets
+          image: 1password/op:2
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Fetching IBKR live credentials from 1Password..."
+              op read "op://K8s/Interactivebrokers Kai/alias" > /secrets/IBEAM_ACCOUNT
+              op read "op://K8s/Interactivebrokers Kai/passwordConfirm" > /secrets/IBEAM_PASSWORD
+              chmod 444 /secrets/*
+              echo "Done."
+          env:
+            - name: OP_SERVICE_ACCOUNT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: op-service-account
+                  key: token
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
+      containers:
+        - name: ibeam
+          image: voyz/ibeam:latest
+          imagePullPolicy: Always
+          # Read credentials from files and export as env vars before starting ibeam
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              export IBEAM_ACCOUNT=$(cat /secrets/IBEAM_ACCOUNT)
+              export IBEAM_PASSWORD=$(cat /secrets/IBEAM_PASSWORD)
+              echo "Starting ibeam for account: $IBEAM_ACCOUNT"
+              exec python /srv/ibeam/ibeam/main.py
+          ports:
+            - containerPort: 5000
+              name: rest-api
+              protocol: TCP
+          env:
+            - name: IBEAM_LOG_LEVEL
+              value: "INFO"
+            # Disable SSL verification for internal health checks
+            - name: IBEAM_VERIFY_SSL
+              value: "False"
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          # ibeam is slow to start (downloads gateway + authenticates ~60-120s)
+          startupProbe:
+            exec:
+              command:
+                - curl
+                - -sk
+                - https://localhost:5000/v1/api/one/user
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 20  # up to 5 minutes
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - -sk
+                - https://localhost:5000/v1/api/one/user
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 15
+            failureThreshold: 3
+
+      volumes:
+        - name: secrets
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+
+      restartPolicy: Always
