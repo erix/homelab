@@ -8,9 +8,7 @@ spec:
   interval: 1m
   ref:
     branch: main
-  url: ssh://git@github.com/erix/splitbot
-  secretRef:
-    name: flux-system
+  url: https://github.com/erix/splitbot
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -26,6 +24,9 @@ spec:
   sourceRef:
     kind: GitRepository
     name: splitbot
+  images:
+    - name: ghcr.io/erix/splitbot
+      newTag: latest # {"$imagepolicy":"flux-system:splitbot:tag"}
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
@@ -65,7 +66,7 @@ spec:
   interval: 1m
   sourceRef:
     kind: GitRepository
-    name: splitbot
+    name: flux-system
   git:
     checkout:
       ref:
@@ -84,5 +85,5 @@ spec:
     push:
       branch: main
   update:
-    path: ./k8s/overlays/local
+    path: ./clusters/new/apps
     strategy: Setters
