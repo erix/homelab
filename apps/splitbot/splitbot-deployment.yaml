@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: splitbot
+  namespace: splitbot
+  labels:
+    app: splitbot
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: splitbot
+  template:
+    metadata:
+      labels:
+        app: splitbot
+    spec:
+      containers:
+        - name: splitbot
+          image: ghcr.io/erix/splitbot:latest
+          env:
+            - name: DATABASE_PATH
+              value: /data/splitbot.db
+            # TELEGRAM_BOT_TOKEN is injected via SealedSecret
+            # Run apps/splitbot/create-sealed-secret.sh, commit the result,
+            # then uncomment below and the line in kustomization.yaml
+            # - name: TELEGRAM_BOT_TOKEN
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: splitbot-secret
+            #       key: TELEGRAM_BOT_TOKEN
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: splitbot-data

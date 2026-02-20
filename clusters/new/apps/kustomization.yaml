@@ -19,6 +19,7 @@ resources:
   - n8n.yaml
   - ib-gateway.yaml
   - ibeam.yaml
+  - splitbot.yaml
   # External Service Ingresses (TrueNAS + Kaiburg)
   - truenas-plex-ingress.yaml
   - truenas-paperless-ingress.yaml
