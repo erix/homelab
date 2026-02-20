@@ -3,5 +3,5 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - splitbot-pvc.yaml
-  - splitbot-sealed-secret.yaml
+  - splitbot-sealed.yaml
   - splitbot-deployment.yaml

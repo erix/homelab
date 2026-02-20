@@ -1,0 +1,15 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: splitbot-secret
+  namespace: splitbot
+spec:
+  encryptedData:
+    TELEGRAM_BOT_TOKEN: AgBaBrSo6NJ931i1zJHrgfVse/DsZK0rqw1Ugw/kUQ4OQfX34sPLMZax3PUl2E8F23BgXQfShfxrS0vlBE4JPvngPEd/MC/NIM2ItUFtm3++n+2eVfCC3/j4mBVdVEJyRozvMohCLXm439XoeD+wnVVawx+ciiTehPUnoobbv20ciyRJipupH6DGfF8pe6iHT2/CTzeFtHTbzqHgUvomJ7T2CvbnW8z0c8dK0XnuUhUp6zMvt3iFG+ic86lvFSuMYMXzlq6J/xXfctnKWRidfvgEpt/uldoXsfFD+Wl89q7gExmmDEgDya1dKn4n3R5qgMB7iidPvxWEDQ4XpoEIVx2CNrEvw7z/m3VP5VeRo4X+DY9LJL1+wfLOPmSLXdmp3Wr/uB4mZ16XvfBA450x8QUII3m56HEI7qhJzMxR02s45YoXQGT9wzF9u+n14SkeKrd3R3MymFNb7XNGOBP795fzzMamYy20RuMPcFsKmxnn1y8GvpVw7PYGHAmtiIKlTHe6BuWZU9OTL8RbYYA80T9faP2zTww90VtyCkDSd5lgsdCPM0Orefmrntn7Y0uSEOkqkKehRKNYgrG+CGR3GUhWEzwy6WYsY2JMJ/D6iRx2UNwkS7ws8ilmrX2GhfHq7Sxc2Ig/yi6vI9VfayrRfouB93gXCc7Cw0s02eIvEEHlUPeyX1lWh5+xQXQsfqbGbrdi3joNOZZqyjU2h70ch7TWvxzhrApGDBjCz9Oali+M4IXaGehNDCGwQr0Nl9tt
+  template:
+    metadata:
+      creationTimestamp: null
+      name: splitbot-secret
+      namespace: splitbot
