@@ -6,7 +6,7 @@ metadata:
   labels:
     app: ibeam
 spec:
-  replicas: 1
+  replicas: 0  # Scaled down — waiting for IBKR OAuth activation
   strategy:
     type: Recreate  # Only one instance per IBKR account
   selector:
