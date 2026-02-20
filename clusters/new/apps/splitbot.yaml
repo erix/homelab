@@ -8,7 +8,9 @@ spec:
   interval: 1m
   ref:
     branch: main
-  url: https://github.com/erix/splitbot
+  url: ssh://git@github.com/erix/splitbot
+  secretRef:
+    name: flux-system
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
@@ -29,3 +31,58 @@ spec:
       kind: Deployment
       name: splitbot
       namespace: splitbot
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: splitbot
+  namespace: flux-system
+spec:
+  image: ghcr.io/erix/splitbot
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: splitbot
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: splitbot
+  filterTags:
+    pattern: "^main-(?P<run>[0-9]+)-sha-[a-f0-9]{40}$"
+    extract: "$run"
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageUpdateAutomation
+metadata:
+  name: splitbot
+  namespace: flux-system
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: splitbot
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: |
+        chore: update splitbot image
+
+        Updated files:
+        {{- range $filename, $_ := .Updated.Files }}
+        - {{ $filename }}
+        {{- end }}
+    push:
+      branch: main
+  update:
+    path: ./k8s/overlays/local
+    strategy: Setters
