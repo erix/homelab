@@ -23,14 +23,11 @@ spec:
           env:
             - name: DATABASE_PATH
               value: /data/splitbot.db
-            # TELEGRAM_BOT_TOKEN is injected via SealedSecret
-            # Run apps/splitbot/create-sealed-secret.sh, commit the result,
-            # then uncomment below and the line in kustomization.yaml
-            # - name: TELEGRAM_BOT_TOKEN
-            #   valueFrom:
-            #     secretKeyRef:
-            #       name: splitbot-secret
-            #       key: TELEGRAM_BOT_TOKEN
+            - name: TELEGRAM_BOT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: splitbot-secret
+                  key: TELEGRAM_BOT_TOKEN
           volumeMounts:
             - name: data
               mountPath: /data
