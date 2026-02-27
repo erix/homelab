@@ -39,6 +39,38 @@ spec:
           name: rdt-downloads
         - mountPath: /data/db
           name: rdt-db
+
+      - name: filebot
+        image: jlesage/filebot:latest
+        env:
+        - name: FILEBOT_GUI
+          value: "0"
+        - name: AMC_INTERVAL
+          value: "0"  # disabled — triggered by rdt-client post-processing script
+        - name: AMC_ACTION
+          value: "symlink"
+        - name: AMC_INPUT_DIR
+          value: "/downloads"
+        - name: AMC_OUTPUT_DIR
+          value: "/media/plex"
+        - name: AMC_MOVIE_FORMAT
+          value: "{ plex.id % \" [\" % {edition} % \", \" % {vf} % \", \" % {hdr} %\"]\" }"
+        - name: AMC_SERIES_FORMAT
+          value: "{ plex.id % \" [\" % {edition} % \", \" % {vf} % \", \" % {hdr} %\"]\" }"
+        - name: AMC_CUSTOM_OPTIONS
+          value: >-
+            --def excludeList=/media/plex/.excludes
+            --def plex=plex.erix-homelab.site:X2f_ydkvwuJFpyy14-KU
+            --def discord=https://discord.com/api/webhooks/1238780467562545153/qIfbeRMkuBynXeZlvKVdDBmGw413ELZ2DjlNNbhKzSTMFNbShtUEX5CfLylt-PwIMu2f
+        volumeMounts:
+        - mountPath: /downloads
+          name: rdt-downloads
+        - mountPath: /media
+          name: rdt-media
+        - mountPath: /config/data/license.psm
+          name: filebot-license
+          subPath: license.psm
+
       volumes:
       - name: rdt-downloads
         persistentVolumeClaim:
@@ -46,3 +78,9 @@ spec:
       - name: rdt-db
         persistentVolumeClaim:
           claimName: rdt-db-pvc
+      - name: rdt-media
+        persistentVolumeClaim:
+          claimName: rdt-media-pvc
+      - name: filebot-license
+        secret:
+          secretName: filebot-license
