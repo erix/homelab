@@ -36,6 +36,9 @@ spec:
         - mountPath: /media
           name: plex-media
           readOnly: true
+        - mountPath: /downloads/rdt
+          name: plex-downloads
+          readOnly: true
       volumes:
       - name: plex-config
         persistentVolumeClaim:
@@ -43,6 +46,9 @@ spec:
       - name: plex-media
         persistentVolumeClaim:
           claimName: plex-media-pvc
+      - name: plex-downloads
+        persistentVolumeClaim:
+          claimName: plex-downloads-pvc
 ---
 apiVersion: v1
 kind: Service
