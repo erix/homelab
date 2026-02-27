@@ -10,6 +10,7 @@ resources:
   - mqtt.yaml
   - zigbee2mqtt.yaml
   # Media
+  - immich.yaml
   - calibre.yaml
   - aiometadata.yaml
   - aiostreams.yaml

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: immich-postgres
+  namespace: immich
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-postgres
+  template:
+    metadata:
+      labels:
+        app: immich-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: tensorchord/pgvecto-rs:pg14-v0.2.0
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: immich-secret
+              key: DB_USERNAME
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: immich-secret
+              key: DB_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: immich-secret
+              key: DB_DATABASE_NAME
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: db-data
+          subPath: postgres
+      volumes:
+      - name: db-data
+        persistentVolumeClaim:
+          claimName: immich-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-postgres
+  namespace: immich
+spec:
+  selector:
+    app: immich-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432

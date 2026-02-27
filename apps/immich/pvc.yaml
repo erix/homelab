@@ -1,0 +1,56 @@
+# App data (thumbs, encoded video, ML models) — local SSD
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-data-pvc
+  namespace: immich
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 100Gi
+---
+# PostgreSQL data — local SSD
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-db-pvc
+  namespace: immich
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 10Gi
+---
+# Originals library — NFS on TrueNAS
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-library-pv
+spec:
+  capacity:
+    storage: 2Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/immich
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: immich-library-pvc
+  namespace: immich
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: immich-library-pv
+  resources:
+    requests:
+      storage: 2Ti
