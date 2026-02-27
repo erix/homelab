@@ -1,0 +1,42 @@
+# rdt downloads — NFS on TrueNAS
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: rdt-downloads-pv
+spec:
+  capacity:
+    storage: 10Ti
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/downloads/rdt
+  persistentVolumeReclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rdt-downloads-pvc
+  namespace: rdt-client
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  volumeName: rdt-downloads-pv
+  resources:
+    requests:
+      storage: 10Ti
+---
+# rdt db — local SSD
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rdt-db-pvc
+  namespace: rdt-client
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 10Gi

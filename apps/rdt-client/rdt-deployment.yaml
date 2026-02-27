@@ -1,48 +1,48 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rdtclient-deployment
+  name: rdt-client
+  namespace: rdt-client
   labels:
-    app: rdtclient
+    app: rdt-client
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: rdtclient
+      app: rdt-client
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: rdtclient
+        app: rdt-client
     spec:
       containers:
-      - name: rdtclient
-        image: rogerfar/rdtclient:latest
+      - name: rdt-client
+        image: erix12/rdt-client-manual-download:latest
         imagePullPolicy: Always
+        env:
+        - name: LOG_LEVEL
+          value: "Warning"
         ports:
         - containerPort: 6500
-        env:
-        - name: PUID
-          value: "1000"
-        - name: PGID
-          value: "1000"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 6500
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
         volumeMounts:
-        - mountPath: "/media"
-          name: symlinks-volume
-        - mountPath: "/data/db"
-          name: rdt-data
-        - mountPath: "/downloads"
-          name: host-volume
+        - mountPath: /data/downloads
+          name: rdt-downloads
+        - mountPath: /data/db
+          name: rdt-db
       volumes:
-      - name: symlinks-volume
+      - name: rdt-downloads
         persistentVolumeClaim:
-          claimName: pvc-media-nfs
-      - name: rdt-data
+          claimName: rdt-downloads-pvc
+      - name: rdt-db
         persistentVolumeClaim:
-          claimName: rdt-pvc
-      - name: host-volume
-        hostPath:
-          path: /mnt/zurg/
-          # Optional: specify the type of the hostPath. Use "DirectoryOrCreate" if you want the directory to be created if it does not already exist.
-          type: Directory
+          claimName: rdt-db-pvc

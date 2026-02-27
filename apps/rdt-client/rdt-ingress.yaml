@@ -1,7 +1,8 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: rdtclient-ingress
+  name: rdt-client-ingress
+  namespace: rdt-client
 spec:
   ingressClassName: traefik
   rules:
@@ -12,7 +13,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: rdtclient-service
+                name: rdt-client
                 port:
                   number: 6500
   tls:

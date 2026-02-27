@@ -12,6 +12,7 @@ resources:
   # Storage
   - local-path-ssd.yaml
   # Media
+  - rdt-client.yaml
   - immich.yaml
   - immich-image-policy.yaml
   - plex-new.yaml
