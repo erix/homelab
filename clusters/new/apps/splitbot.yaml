@@ -25,7 +25,7 @@ spec:
     name: splitbot
   images:
     - name: ghcr.io/erix/splitbot
-      newTag: main-10-sha-e465ebf7c2bf95c524af42698b4fa15aef68c2f3 # {"$imagepolicy":"flux-system:splitbot:tag"}
+      newTag: main-11-sha-8038ab014b139b0cac82a8f71560a0322fb70570 # {"$imagepolicy":"flux-system:splitbot:tag"}
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
