@@ -17,6 +17,15 @@ spec:
       labels:
         app: rdt-client
     spec:
+      initContainers:
+      - name: filebot-license-init
+        image: busybox
+        command: ['sh', '-c', 'mkdir -p /config/data && cp /license/license.psm /config/data/license.psm && chmod 644 /config/data/license.psm']
+        volumeMounts:
+        - mountPath: /license
+          name: filebot-license
+        - mountPath: /config
+          name: filebot-config
       containers:
       - name: rdt-client
         image: erix12/rdt-client-manual-download:latest
@@ -45,8 +54,12 @@ spec:
         env:
         - name: FILEBOT_GUI
           value: "0"
+        - name: USER_ID
+          value: "911"
+        - name: GROUP_ID
+          value: "911"
         - name: AMC_INTERVAL
-          value: "0"  # disabled — triggered by rdt-client post-processing script
+          value: "1800"  # 30 min fallback watcher
         - name: AMC_ACTION
           value: "symlink"
         - name: AMC_INPUT_DIR
@@ -67,9 +80,8 @@ spec:
           name: rdt-downloads
         - mountPath: /media
           name: rdt-media
-        - mountPath: /config/data/license.psm
-          name: filebot-license
-          subPath: license.psm
+        - mountPath: /config
+          name: filebot-config
 
       volumes:
       - name: rdt-downloads
@@ -84,3 +96,5 @@ spec:
       - name: filebot-license
         secret:
           secretName: filebot-license
+      - name: filebot-config
+        emptyDir: {}
