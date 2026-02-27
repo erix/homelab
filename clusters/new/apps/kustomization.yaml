@@ -13,6 +13,7 @@ resources:
   - local-path-ssd.yaml
   # Media
   - immich.yaml
+  - plex-new.yaml
   - calibre.yaml
   - aiometadata.yaml
   - aiostreams.yaml
@@ -24,7 +25,7 @@ resources:
   - ibeam.yaml
   - splitbot.yaml
   # External Service Ingresses (TrueNAS + Kaiburg)
-  - truenas-plex-ingress.yaml
+
   - truenas-paperless-ingress.yaml
   - truenas-jackettio-ingress.yaml
   - truenas-minio-ingress.yaml
