@@ -19,8 +19,8 @@ spec:
     spec:
       initContainers:
       - name: filebot-license-init
-        image: busybox
-        command: ['sh', '-c', 'mkdir -p /config/data && cp /license/license.psm /config/data/license.psm && chmod 644 /config/data/license.psm']
+        image: jlesage/filebot:latest
+        command: ['sh', '-c', '/opt/filebot/filebot --license /license/license.psm']
         volumeMounts:
         - mountPath: /license
           name: filebot-license
