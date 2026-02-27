@@ -9,6 +9,8 @@ resources:
   - home-assistant.yaml
   - mqtt.yaml
   - zigbee2mqtt.yaml
+  # Storage
+  - local-path-ssd.yaml
   # Media
   - immich.yaml
   - calibre.yaml
