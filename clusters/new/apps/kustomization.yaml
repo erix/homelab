@@ -14,6 +14,7 @@ resources:
   # Media
   - immich.yaml
   - plex-new.yaml
+  - plex-image-policy.yaml
   - calibre.yaml
   - aiometadata.yaml
   - aiostreams.yaml
