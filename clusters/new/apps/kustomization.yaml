@@ -13,6 +13,7 @@ resources:
   - local-path-ssd.yaml
   # Media
   - immich.yaml
+  - immich-image-policy.yaml
   - plex-new.yaml
   - plex-image-policy.yaml
   - calibre.yaml
