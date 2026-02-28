@@ -36,7 +36,7 @@ spec:
         - mountPath: /media
           name: plex-media
           readOnly: true
-        - mountPath: /downloads/rdt
+        - mountPath: /downloads
           name: plex-downloads
           readOnly: true
         - mountPath: /dev/dri
