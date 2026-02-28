@@ -60,6 +60,8 @@ spec:
           value: "911"
         - name: AMC_INTERVAL
           value: "60"  # 1 min polling, runs only when /downloads changes
+        - name: AMC_INPUT_STABLE_TIME
+          value: "300"  # wait 5 min of no changes before processing
         - name: AMC_ACTION
           value: "symlink"
         - name: AMC_INPUT_DIR
