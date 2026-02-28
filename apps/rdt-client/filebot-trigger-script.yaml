@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebot-trigger-script
+  namespace: rdt-client
+data:
+  trigger.sh: |
+    #!/bin/sh
+    echo "FileBot trigger server starting on port 9999..."
+
+    RESPONSE='HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK'
+
+    while true; do
+      REQFILE=$(mktemp)
+      printf "$RESPONSE" | nc -l -p 9999 > "$REQFILE"
+
+      # Extract POST body (line after blank line)
+      BODY=$(awk '/^\r$|^$/{found=1; next} found{print; exit}' "$REQFILE" | tr -d '\r\n')
+      rm -f "$REQFILE"
+
+      if [ -n "$BODY" ]; then
+        echo "Triggering AMC for: $BODY"
+        /opt/filebot/filebot -script fn:amc \
+          --output /media \
+          --action symlink \
+          --conflict skip \
+          -non-strict \
+          --def "movieFormat={ plex.id % \" [\" % {edition} % \", \" % {vf} % \", \" % {hdr} %\"]\" }" \
+          --def "seriesFormat={ plex.id % \" [\" % {edition} % \", \" % {vf} % \", \" % {hdr} %\"]\" }" \
+          --def excludeList=/media/.excludes \
+          --def "plex=plex.erix-homelab.site:X2f_ydkvwuJFpyy14-KU" \
+          --def "discord=https://discord.com/api/webhooks/1238780467562545153/qIfbeRMkuBynXeZlvKVdDBmGw413ELZ2DjlNNbhKzSTMFNbShtUEX5CfLylt-PwIMu2f" \
+          "$BODY" &
+      fi
+    done

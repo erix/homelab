@@ -59,9 +59,7 @@ spec:
         - name: GROUP_ID
           value: "911"
         - name: AMC_INTERVAL
-          value: "60"  # 1 min polling, runs only when /downloads changes
-        - name: AMC_INPUT_STABLE_TIME
-          value: "300"  # wait 5 min of no changes before processing
+          value: "3600"  # 1h fallback only - primary trigger via filebot-trigger sidecar
         - name: AMC_ACTION
           value: "symlink"
         - name: AMC_INPUT_DIR
@@ -85,6 +83,24 @@ spec:
         - mountPath: /config
           name: filebot-config
 
+      - name: filebot-trigger
+        image: jlesage/filebot:latest
+        command: ['sh', '/scripts/trigger.sh']
+        env:
+        - name: USER_ID
+          value: "911"
+        - name: GROUP_ID
+          value: "911"
+        volumeMounts:
+        - mountPath: /downloads
+          name: rdt-downloads
+        - mountPath: /media
+          name: rdt-media
+        - mountPath: /config
+          name: filebot-config
+        - mountPath: /scripts
+          name: filebot-trigger-script
+
       volumes:
       - name: rdt-downloads
         persistentVolumeClaim:
@@ -100,3 +116,7 @@ spec:
           secretName: filebot-license
       - name: filebot-config
         emptyDir: {}
+      - name: filebot-trigger-script
+        configMap:
+          name: filebot-trigger-script
+          defaultMode: 0755
