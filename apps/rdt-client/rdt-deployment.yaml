@@ -59,7 +59,7 @@ spec:
         - name: GROUP_ID
           value: "911"
         - name: AMC_INTERVAL
-          value: "1800"  # 30 min fallback watcher
+          value: "60"  # 1 min polling, runs only when /downloads changes
         - name: AMC_ACTION
           value: "symlink"
         - name: AMC_INPUT_DIR
