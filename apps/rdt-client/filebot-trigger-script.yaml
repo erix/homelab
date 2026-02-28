@@ -14,8 +14,8 @@ data:
       REQFILE=$(mktemp)
       printf "$RESPONSE" | nc -l -p 9999 > "$REQFILE"
 
-      # Extract POST body (line after blank line)
-      BODY=$(awk '/^\r$|^$/{found=1; next} found{print; exit}' "$REQFILE" | tr -d '\r\n')
+      # Extract POST body (line after blank line), strip quotes and whitespace
+      BODY=$(awk '/^\r$|^$/{found=1; next} found{print; exit}' "$REQFILE" | tr -d '\r\n"')
       rm -f "$REQFILE"
 
       if [ -n "$BODY" ]; then
