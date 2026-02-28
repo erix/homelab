@@ -30,6 +30,6 @@ data:
           --def excludeList=/media/.excludes \
           --def "plex=plex.erix-homelab.site:X2f_ydkvwuJFpyy14-KU" \
           --def "discord=https://discord.com/api/webhooks/1238780467562545153/qIfbeRMkuBynXeZlvKVdDBmGw413ELZ2DjlNNbhKzSTMFNbShtUEX5CfLylt-PwIMu2f" \
-          "$BODY" &
+          "$(echo "$BODY" | sed 's|/data/downloads|/downloads|')" &
       fi
     done
