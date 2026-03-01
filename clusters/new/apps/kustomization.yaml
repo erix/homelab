@@ -20,6 +20,8 @@ resources:
   - calibre.yaml
   - aiometadata.yaml
   - aiostreams.yaml
+  - movie-night.yaml
+  - movie-night-image-policy.yaml
   # Network
   - unifi.yaml
   # Tools

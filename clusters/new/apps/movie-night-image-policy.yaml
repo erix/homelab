@@ -1,0 +1,48 @@
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: movie-night
+  namespace: flux-system
+spec:
+  image: ghcr.io/erix/movie-night
+  interval: 5m
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: movie-night
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: movie-night
+  filterTags:
+    pattern: "^build-(?P<build>[0-9]+)-sha-[a-f0-9]{7}$"
+    extract: "$build"
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: movie-night
+  namespace: flux-system
+spec:
+  interval: 5m
+  sourceRef:
+    kind: GitRepository
+    name: movie-night
+  git:
+    checkout:
+      ref:
+        branch: master
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: "chore: update movie-night image"
+    push:
+      branch: master
+  update:
+    path: ./k8s
+    strategy: Setters
