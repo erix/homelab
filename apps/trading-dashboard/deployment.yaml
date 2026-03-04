@@ -27,7 +27,8 @@ spec:
                 name: trading-dashboard-config
           volumeMounts:
             - name: positions-data
-              mountPath: /data
+              mountPath: /data/positions.json
+              subPath: positions.json
               readOnly: true
           resources:
             requests:
@@ -50,5 +51,5 @@ spec:
             periodSeconds: 30
       volumes:
         - name: positions-data
-          hostPath:
-            path: /home/erix/agents/trader/trading
+          configMap:
+            name: trading-positions
