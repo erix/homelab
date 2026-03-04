@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trading-dashboard
+  namespace: default
+  labels:
+    app: trading-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trading-dashboard
+  template:
+    metadata:
+      labels:
+        app: trading-dashboard
+    spec:
+      containers:
+        - name: dashboard
+          image: ghcr.io/erix/trading-dashboard:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: trading-dashboard-config
+          volumeMounts:
+            - name: positions-data
+              mountPath: /data
+              readOnly: true
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      volumes:
+        - name: positions-data
+          hostPath:
+            path: /home/erix/agents/trader/trading
+            type: Directory

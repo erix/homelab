@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: trading-dashboard
+  namespace: default
+  labels:
+    app: trading-dashboard
+spec:
+  selector:
+    app: trading-dashboard
+  ports:
+    - port: 80
+      targetPort: 8000

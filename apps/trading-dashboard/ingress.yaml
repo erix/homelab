@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: trading-dashboard-ingress
+  namespace: default
+  labels:
+    app: trading-dashboard
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: trading.erix-homelab.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: trading-dashboard
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - trading.erix-homelab.site
+      secretName: erix-homelab-site-tls

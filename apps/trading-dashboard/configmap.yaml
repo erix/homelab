@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trading-dashboard-config
+  namespace: default
+data:
+  CP_GATEWAY_URL: "https://192.168.11.21:5000"
+  POSITIONS_FILE: "/data/positions.json"
