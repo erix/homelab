@@ -29,6 +29,7 @@ resources:
   - ib-gateway.yaml
   - ibeam.yaml
   - splitbot.yaml
+  - trading-dashboard.yaml
   # External Service Ingresses (TrueNAS + Kaiburg)
 
   - truenas-paperless-ingress.yaml
