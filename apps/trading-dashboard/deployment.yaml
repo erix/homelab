@@ -50,4 +50,3 @@ spec:
         - name: positions-data
           hostPath:
             path: /home/erix/agents/trader/trading
-            type: Directory
