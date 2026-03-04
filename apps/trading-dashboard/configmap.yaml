@@ -5,4 +5,5 @@ metadata:
   namespace: default
 data:
   CP_GATEWAY_URL: "https://192.168.11.21:5000"
+  CP_GATEWAY_PUBLIC_URL: "https://ibkr.erix-homelab.site"
   POSITIONS_FILE: "/data/positions.json"
