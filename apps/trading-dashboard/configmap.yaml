@@ -8,3 +8,4 @@ data:
   CP_GATEWAY_PUBLIC_URL: "https://ibkr.erix-homelab.site"
   IBKR_ACCOUNT_ID: "U7525143"
   POSITIONS_META_FILE: "/trading/positions_meta.json"
+  PLAYBOOK_FILE: "/data/playbook.md"

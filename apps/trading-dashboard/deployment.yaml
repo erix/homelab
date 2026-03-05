@@ -34,6 +34,10 @@ spec:
               mountPath: /trading/positions_meta.json
               subPath: positions_meta.json
               readOnly: true
+            - name: playbook
+              mountPath: /data/playbook.md
+              subPath: playbook.md
+              readOnly: true
           resources:
             requests:
               memory: "128Mi"
@@ -60,3 +64,6 @@ spec:
         - name: positions-meta
           configMap:
             name: trading-positions-meta
+        - name: playbook
+          configMap:
+            name: trading-playbook
