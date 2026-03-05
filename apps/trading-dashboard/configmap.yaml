@@ -6,4 +6,5 @@ metadata:
 data:
   CP_GATEWAY_URL: "https://192.168.1.100:5000"
   CP_GATEWAY_PUBLIC_URL: "https://ibkr.erix-homelab.site"
-  POSITIONS_FILE: "/data/positions.json"
+  IBKR_ACCOUNT_ID: "U7525143"
+  POSITIONS_META_FILE: "/trading/positions_meta.json"
