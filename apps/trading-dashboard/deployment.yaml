@@ -26,6 +26,10 @@ spec:
             - configMapRef:
                 name: trading-dashboard-config
           volumeMounts:
+            - name: positions-data
+              mountPath: /data/positions.json
+              subPath: positions.json
+              readOnly: true
             - name: positions-meta
               mountPath: /trading/positions_meta.json
               subPath: positions_meta.json
@@ -50,6 +54,9 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 30
       volumes:
+        - name: positions-data
+          configMap:
+            name: trading-positions
         - name: positions-meta
           configMap:
             name: trading-positions-meta
