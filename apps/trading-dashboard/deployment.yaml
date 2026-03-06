@@ -38,6 +38,9 @@ spec:
               mountPath: /data/playbook.md
               subPath: playbook.md
               readOnly: true
+            - name: iv-history
+              mountPath: /data/iv_history.json
+              subPath: iv_history.json
           resources:
             requests:
               memory: "128Mi"
@@ -67,3 +70,7 @@ spec:
         - name: playbook
           configMap:
             name: trading-playbook
+        - name: iv-history
+          hostPath:
+            path: /home/erix/agents/trader/trading/iv_history.json
+            type: FileOrCreate
