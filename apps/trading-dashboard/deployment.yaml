@@ -32,7 +32,6 @@ spec:
               readOnly: true
             - name: positions-db
               mountPath: /data/positions.db
-              subPath: positions.db
             - name: positions-meta
               mountPath: /trading/positions_meta.json
               subPath: positions_meta.json
