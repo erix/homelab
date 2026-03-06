@@ -40,7 +40,6 @@ spec:
               readOnly: true
             - name: iv-history
               mountPath: /data/iv_history.json
-              subPath: iv_history.json
           resources:
             requests:
               memory: "128Mi"
