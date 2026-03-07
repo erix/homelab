@@ -1,3 +1,14 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: trading-dashboard
+  namespace: flux-system
+spec:
+  interval: 1m
+  ref:
+    branch: master
+  url: https://github.com/erix/trading-dashboard
+---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -11,3 +22,55 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+  images:
+    - name: ghcr.io/erix/trading-dashboard
+      newTag: latest # {"$imagepolicy":"flux-system:trading-dashboard:tag"}
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: trading-dashboard
+  namespace: flux-system
+spec:
+  image: ghcr.io/erix/trading-dashboard
+  interval: 1m
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: trading-dashboard
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: trading-dashboard
+  filterTags:
+    pattern: "^master-(?P<run>[0-9]+)-sha-[a-f0-9]{7}$"
+    extract: "$run"
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: trading-dashboard
+  namespace: flux-system
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: "chore: update trading-dashboard image"
+    push:
+      branch: main
+  update:
+    path: ./clusters/new/apps
+    strategy: Setters
