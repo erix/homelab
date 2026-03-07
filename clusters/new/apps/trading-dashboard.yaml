@@ -34,6 +34,8 @@ metadata:
 spec:
   image: ghcr.io/erix/trading-dashboard
   interval: 1m
+  secretRef:
+    name: ghcr-credentials
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImagePolicy
