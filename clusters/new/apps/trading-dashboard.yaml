@@ -24,7 +24,7 @@ spec:
     name: flux-system
   images:
     - name: ghcr.io/erix/trading-dashboard
-      newTag: master-6-sha-c6fd145 # {"$imagepolicy":"flux-system:trading-dashboard:tag"}
+      newTag: master-7-sha-6f0c1b8 # {"$imagepolicy":"flux-system:trading-dashboard:tag"}
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageRepository
