@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pastefy-ingress
+  labels:
+    app: pastefy
+spec:
+  ingressClassName: traefik
+  rules:
+  - host: paste.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pastefy-service
+            port:
+              number: 80
+  tls:
+  - secretName: erix-homelab-site-tls
+    hosts:
+    - paste.erix-homelab.site

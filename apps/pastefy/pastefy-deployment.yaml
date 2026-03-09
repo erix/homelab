@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pastefy
+  labels:
+    app: pastefy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pastefy
+  template:
+    metadata:
+      labels:
+        app: pastefy
+    spec:
+      containers:
+      - name: pastefy
+        image: interaapps/pastefy:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        env:
+        - name: HTTP_SERVER_PORT
+          value: "80"
+        - name: HTTP_SERVER_CORS
+          value: "*"
+        - name: DATABASE_DRIVER
+          value: mysql
+        - name: DATABASE_NAME
+          value: pastefy
+        - name: DATABASE_USER
+          value: pastefy
+        - name: DATABASE_PASSWORD
+          value: pastefy123
+        - name: DATABASE_HOST
+          value: mariadb-service.home-automation.svc.cluster.local
+        - name: DATABASE_PORT
+          value: "3306"
+        - name: SERVER_NAME
+          value: "https://paste.erix-homelab.site"
