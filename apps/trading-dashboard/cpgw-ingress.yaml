@@ -37,7 +37,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: cp-gateway
+                name: ibeam
                 port:
                   number: 5000
   tls:
