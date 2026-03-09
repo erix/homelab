@@ -16,7 +16,7 @@ metadata:
   namespace: default
 subsets:
   - addresses:
-      - ip: 192.168.11.21
+      - ip: 192.168.1.100
     ports:
       - port: 5000
 ---
@@ -37,7 +37,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: ibeam
+                name: cp-gateway
                 port:
                   number: 5000
   tls:
