@@ -26,6 +26,7 @@ resources:
   - unifi.yaml
   # Tools
   - n8n.yaml
+  - pastefy.yaml
   - ib-gateway.yaml
   - ibeam.yaml
   - splitbot.yaml
