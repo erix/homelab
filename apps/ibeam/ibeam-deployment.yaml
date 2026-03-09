@@ -41,25 +41,5 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "500m"
-          # ibeam is slow to start (downloads gateway + authenticates ~60-120s)
-          startupProbe:
-            exec:
-              command:
-                - curl
-                - -sk
-                - https://localhost:5000/v1/api/one/user
-            initialDelaySeconds: 60
-            periodSeconds: 15
-            failureThreshold: 20  # up to 5 minutes
-          livenessProbe:
-            exec:
-              command:
-                - curl
-                - -sk
-                - https://localhost:5000/v1/api/one/user
-            initialDelaySeconds: 120
-            periodSeconds: 60
-            timeoutSeconds: 15
-            failureThreshold: 3
 
       restartPolicy: Always
