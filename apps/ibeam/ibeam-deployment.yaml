@@ -31,6 +31,9 @@ spec:
             # Disable SSL verification for internal health checks
             - name: IBEAM_VERIFY_SSL
               value: "False"
+            # Don't try to auto-authenticate; allow manual login via browser
+            - name: IBEAM_START_ACTIVE
+              value: "false"
           resources:
             requests:
               memory: "512Mi"
