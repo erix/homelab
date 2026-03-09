@@ -1,4 +1,13 @@
-# Service pointing to CP Gateway on the host (port 5000)
+# ServersTransport to skip TLS verification for CP Gateway (self-signed cert)
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: cpgw-skip-tls
+  namespace: default
+spec:
+  insecureSkipVerify: true
+---
+# Service pointing to CP Gateway on kaiburg (192.168.1.100 port 5000)
 apiVersion: v1
 kind: Service
 metadata:
@@ -20,27 +29,22 @@ subsets:
     ports:
       - port: 5000
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+# IngressRoute for full TLS backend control
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
   name: cp-gateway-ingress
   namespace: default
-  annotations:
-    traefik.ingress.kubernetes.io/service.serversscheme: https
 spec:
-  ingressClassName: traefik
-  rules:
-    - host: ibkr.erix-homelab.site
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: cp-gateway
-                port:
-                  number: 5000
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`ibkr.erix-homelab.site`)
+      kind: Rule
+      services:
+        - name: cp-gateway
+          port: 5000
+          scheme: https
+          serversTransport: cpgw-skip-tls
   tls:
-    - hosts:
-        - ibkr.erix-homelab.site
-      secretName: erix-homelab-site-tls
+    secretName: erix-homelab-site-tls
