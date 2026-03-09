@@ -15,21 +15,10 @@ spec:
     spec:
       containers:
       - name: cp-gateway
-        image: ubuntu:22.04
-        command:
-          - /bin/bash
-          - -c
-          - |
-            apt-get update && apt-get install -y default-jre curl
-            cd /opt/cp-gateway
-            exec ./bin/run.sh root/conf.yaml
-        workingDir: /opt/cp-gateway
+        image: voyz/ibeam:latest
         ports:
         - containerPort: 5000
           name: http
-        volumeMounts:
-        - name: cp-gateway-volume
-          mountPath: /opt/cp-gateway
         resources:
           requests:
             memory: "512Mi"
@@ -44,13 +33,8 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 5
           failureThreshold: 3
       restartPolicy: Always
-      volumes:
-      - name: cp-gateway-volume
-        persistentVolumeClaim:
-          claimName: cp-gateway-pvc
 ---
 apiVersion: v1
 kind: Service
@@ -65,15 +49,3 @@ spec:
     targetPort: 5000
     name: http
   type: ClusterIP
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: cp-gateway-pvc
-  namespace: default
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 10Gi
