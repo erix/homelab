@@ -31,7 +31,7 @@ spec:
               subPath: positions.json
               readOnly: true
             - name: positions-db
-              mountPath: /data/positions.db
+              mountPath: /data/db
             - name: positions-meta
               mountPath: /trading/positions_meta.json
               subPath: positions_meta.json
@@ -73,8 +73,8 @@ spec:
             name: trading-playbook
         - name: positions-db
           hostPath:
-            path: /home/erix/agents/trader/trading/positions.db
-            type: FileOrCreate
+            path: /home/erix/agents/trader/trading/db
+            type: DirectoryOrCreate
         - name: iv-history
           hostPath:
             path: /home/erix/agents/trader/trading/iv_history.json
