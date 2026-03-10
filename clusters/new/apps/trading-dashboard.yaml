@@ -1,14 +1,7 @@
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: GitRepository
-metadata:
-  name: trading-dashboard
-  namespace: flux-system
-spec:
-  interval: 1m
-  ref:
-    branch: master
-  url: https://github.com/erix/trading-dashboard
----
+# GitRepository for trading-dashboard source code is not needed
+# We pull pre-built images from GHCR via ImageRepository (see below)
+# The Kustomization references flux-system (homelab) GitRepository instead
+
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
