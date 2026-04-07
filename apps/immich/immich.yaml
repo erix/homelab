@@ -77,7 +77,7 @@ spec:
     spec:
       containers:
       - name: immich-machine-learning
-        image: ghcr.io/immich-app/immich-machine-learning:v2.6.3 # {"$imagepolicy":"flux-system:immich-ml"}
+        image: ghcr.io/immich-app/immich-machine-learning:v2.7.0 # {"$imagepolicy":"flux-system:immich-ml"}
         env:
         - name: REDIS_HOSTNAME
           value: immich-redis
