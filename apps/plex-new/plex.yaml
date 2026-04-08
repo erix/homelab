@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: plex
-        image: lscr.io/linuxserver/plex:1.43.0.10492-121068a07-ls299 # {"$imagepolicy":"flux-system:plex"}
+        image: lscr.io/linuxserver/plex:1.43.1.10576-06378bdcd-ls300 # {"$imagepolicy":"flux-system:plex"}
         env:
         - name: TZ
           value: "Europe/Berlin"
