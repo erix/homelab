@@ -4,7 +4,7 @@ metadata:
   name: trading-dashboard-config
   namespace: default
 data:
-  CP_GATEWAY_URL: "https://192.168.1.100:5000"
+  CP_GATEWAY_URL: "https://ibkr.erix-homelab.site"
   CP_GATEWAY_PUBLIC_URL: "https://ibkr.erix-homelab.site"
   IBKR_ACCOUNT_ID: "U7525143"
   DB_PATH: "/data/db/positions.db"
