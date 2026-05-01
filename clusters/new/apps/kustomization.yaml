@@ -31,8 +31,8 @@ resources:
   - ibeam.yaml
   - splitbot.yaml
   - trading-dashboard.yaml
+  - subscription-tracker.yaml
   # External Service Ingresses (TrueNAS + Kaiburg)
-
   - truenas-paperless-ingress.yaml
   - truenas-jackettio-ingress.yaml
   - truenas-minio-ingress.yaml
