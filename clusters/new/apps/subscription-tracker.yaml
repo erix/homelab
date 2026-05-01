@@ -13,7 +13,7 @@ spec:
     name: flux-system
   images:
     - name: ghcr.io/erix/subscription-tracker
-      newTag: main-3-sha-50ae42d # {"$imagepolicy":"flux-system:subscription-tracker:tag"}
+      newTag: main-4-sha-7acf97d # {"$imagepolicy":"flux-system:subscription-tracker:tag"}
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageRepository
