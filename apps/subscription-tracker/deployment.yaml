@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: subscription-tracker
+  namespace: default
+  labels:
+    app: subscription-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: subscription-tracker
+  template:
+    metadata:
+      labels:
+        app: subscription-tracker
+    spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
+      containers:
+        - name: app
+          image: ghcr.io/erix/subscription-tracker:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATA_DIR
+              value: /data
+            - name: RAW_DATA_DIR
+              value: /data/raw
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: subscription-tracker-data
