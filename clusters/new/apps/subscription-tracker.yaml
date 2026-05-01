@@ -1,0 +1,67 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: subscription-tracker
+  namespace: flux-system
+spec:
+  interval: 10m
+  path: ../../apps/subscription-tracker
+  prune: true
+  targetNamespace: default
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  images:
+    - name: ghcr.io/erix/subscription-tracker
+      newTag: latest # {"":"flux-system:subscription-tracker:tag"}
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: subscription-tracker
+  namespace: flux-system
+spec:
+  image: ghcr.io/erix/subscription-tracker
+  interval: 1m
+  secretRef:
+    name: ghcr-credentials
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: subscription-tracker
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: subscription-tracker
+  filterTags:
+    pattern: "^main-(?P<run>[0-9]+)-sha-[a-f0-9]+"
+    extract: ""
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: subscription-tracker
+  namespace: flux-system
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: "chore: update subscription-tracker image"
+    push:
+      branch: main
+  update:
+    path: ./clusters/new/apps
+    strategy: Setters
