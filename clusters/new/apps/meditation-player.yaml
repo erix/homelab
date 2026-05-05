@@ -12,7 +12,7 @@ spec:
     name: flux-system
   images:
     - name: ghcr.io/erix/meditation-player
-      newTag: main-3-sha-ded5b3711e1eb8edbfaea65fcc8cad726a802fd8 # {"$imagepolicy":"flux-system:meditation-player:tag"}
+      newTag: main-4-sha-deb879d9152be23e36db4c5bf2eaff5ff434c0a7 # {"$imagepolicy":"flux-system:meditation-player:tag"}
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageRepository
