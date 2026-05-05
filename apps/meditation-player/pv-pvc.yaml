@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: meditations-nfs-pv
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4.1
+    - ro
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/meditations
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: meditations-nfs-pvc
+  namespace: meditation-player
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 20Gi
+  volumeName: meditations-nfs-pv
+  storageClassName: ""

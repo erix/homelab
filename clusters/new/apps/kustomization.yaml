@@ -22,6 +22,7 @@ resources:
   - aiostreams.yaml
   - movie-night.yaml
   - movie-night-image-policy.yaml
+  - meditation-player.yaml
   # Network
   - unifi.yaml
   # Tools

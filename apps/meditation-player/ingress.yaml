@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: meditation-player
+  namespace: meditation-player
+  labels:
+    app: meditation-player
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: meditations.erix-homelab.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: meditation-player
+                port:
+                  number: 80
+  tls:
+    - secretName: erix-homelab-site-tls
+      hosts:
+        - meditations.erix-homelab.site

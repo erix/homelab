@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meditation-player
+  namespace: meditation-player
+  labels:
+    app: meditation-player
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: meditation-player
+  template:
+    metadata:
+      labels:
+        app: meditation-player
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/erix/meditation-player:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: meditations
+              mountPath: /usr/share/nginx/html/media
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+      volumes:
+        - name: meditations
+          persistentVolumeClaim:
+            claimName: meditations-nfs-pvc
