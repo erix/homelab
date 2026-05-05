@@ -10,3 +10,57 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+  images:
+    - name: ghcr.io/erix/meditation-player
+      newTag: latest # {"$imagepolicy":"flux-system:meditation-player:tag"}
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImageRepository
+metadata:
+  name: meditation-player
+  namespace: flux-system
+spec:
+  image: ghcr.io/erix/meditation-player
+  interval: 1m
+  secretRef:
+    name: ghcr-credentials
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta2
+kind: ImagePolicy
+metadata:
+  name: meditation-player
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: meditation-player
+  filterTags:
+    pattern: "^main-(?P<run>[0-9]+)-sha-[a-f0-9]{40}$"
+    extract: "$run"
+  policy:
+    numerical:
+      order: asc
+---
+apiVersion: image.toolkit.fluxcd.io/v1beta1
+kind: ImageUpdateAutomation
+metadata:
+  name: meditation-player
+  namespace: flux-system
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: "chore: update meditation-player image"
+    push:
+      branch: main
+  update:
+    path: ./clusters/new/apps
+    strategy: Setters
