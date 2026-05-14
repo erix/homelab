@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: aiostreams
-        image: ghcr.io/viren070/aiostreams:latest
+        image: ghcr.io/viren070/aiostreams:v2.29.5@sha256:42ec8dccaf163fcc5863573afecfcdfc5cefabe7ae20ed0772ac6ce65e439808
         ports:
         - containerPort: 3000
           name: http
