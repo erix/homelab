@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: aiometadata
-        image: ghcr.io/cedya77/aiometadata:latest
+        image: ghcr.io/cedya77/aiometadata:latest@sha256:1dbf878e225ef78d60e4fcd44f0a7bd18127dc36d156eb891dec1a08b202a54f
         ports:
         - containerPort: 3232
           name: http

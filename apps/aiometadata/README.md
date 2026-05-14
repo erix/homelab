@@ -4,7 +4,7 @@ A metadata aggregation service for Stremio that pulls content information from m
 
 ## Deployment Information
 
-- **Image**: `ghcr.io/cedya77/aiometadata:latest`
+- **Image**: `ghcr.io/cedya77/aiometadata:latest@sha256:1dbf878e225ef78d60e4fcd44f0a7bd18127dc36d156eb891dec1a08b202a54f`
 - **Port**: 3232
 - **URL**: https://aiometadata.erix-homelab.site
 - **Storage**: 5Gi (SQLite database) + 2Gi (Redis cache)
