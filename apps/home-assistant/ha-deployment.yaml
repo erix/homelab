@@ -18,7 +18,7 @@ spec:
       #   kubernetes.io/hostname: homelab-03
       containers:
       - name: homeassistant
-        image: homeassistant/home-assistant:2025.12
+        image: homeassistant/home-assistant:2026.6.1@sha256:59aa8824955c9db491b75d2eebe42bd68494f80c2ec69ec0d66d9dae37d37514
         imagePullPolicy: IfNotPresent
         # ports removed: hostNetwork=true conflicts with svclb hostPorts
         resources: {}
