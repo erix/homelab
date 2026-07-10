@@ -13,7 +13,7 @@ A Stremio super-addon that consolidates multiple addons and debrid services into
 
 ## Deployment Information
 
-- **Image**: `ghcr.io/viren070/aiostreams:v2.29.5@sha256:42ec8dccaf163fcc5863573afecfcdfc5cefabe7ae20ed0772ac6ce65e439808`
+- **Image**: `ghcr.io/viren070/aiostreams:v2.30.6@sha256:dcebb1374b355e320e10ee08642b011072cef7da3523fb99bd59451c5ad5ee99`
 - **Port**: 3000
 - **URL**: https://aiostreams.erix-homelab.site
 - **Storage**: 5Gi for configuration and cache data
