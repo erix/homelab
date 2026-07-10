@@ -20,6 +20,7 @@ resources:
   - calibre.yaml
   - aiometadata.yaml
   - aiostreams.yaml
+  - aiostreams-image-policy.yaml
   - movie-night.yaml
   - movie-night-image-policy.yaml
   - meditation-player.yaml

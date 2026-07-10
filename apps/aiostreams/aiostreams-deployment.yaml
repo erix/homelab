@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: aiostreams
-        image: ghcr.io/viren070/aiostreams:v2.30.6@sha256:dcebb1374b355e320e10ee08642b011072cef7da3523fb99bd59451c5ad5ee99
+        image: ghcr.io/viren070/aiostreams:v2.30.6 # {"$imagepolicy":"flux-system:aiostreams"}
         ports:
         - containerPort: 3000
           name: http
