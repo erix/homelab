@@ -30,6 +30,15 @@ spec:
       containers:
       - name: mongodb
         image: mongo:3.6
+        args:
+        - --wiredTigerCacheSizeGB
+        - "1"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
         ports:
         - containerPort: 27017
         volumeMounts:
