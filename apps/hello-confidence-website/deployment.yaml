@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-confidence-website
+  namespace: default
+  labels:
+    app: hello-confidence-website
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-confidence-website
+  template:
+    metadata:
+      labels:
+        app: hello-confidence-website
+    spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
+      containers:
+        - name: website
+          image: ghcr.io/fuloptimea-rgb/hello-confidence-website:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30

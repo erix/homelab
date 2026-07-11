@@ -34,6 +34,7 @@ resources:
   - splitbot.yaml
   - trading-dashboard.yaml
   - subscription-tracker.yaml
+  - hello-confidence-website.yaml
   # External Service Ingresses (TrueNAS + Kaiburg)
   - truenas-paperless-ingress.yaml
   - truenas-jackettio-ingress.yaml
