@@ -35,6 +35,7 @@ resources:
   - trading-dashboard.yaml
   - subscription-tracker.yaml
   - hello-confidence-website.yaml
+  - hello-confidence-tunnel.yaml
   # External Service Ingresses (TrueNAS + Kaiburg)
   - truenas-paperless-ingress.yaml
   - truenas-jackettio-ingress.yaml
