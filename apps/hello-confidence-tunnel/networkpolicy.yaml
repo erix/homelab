@@ -35,6 +35,16 @@ spec:
         - protocol: TCP
           port: 80
     - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+          podSelector:
+            matchLabels:
+              app: hello-confidence-signup
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
         - ipBlock:
             cidr: 0.0.0.0/0
             except:

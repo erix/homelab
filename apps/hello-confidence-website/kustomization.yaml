@@ -4,3 +4,10 @@ resources:
   - deployment.yaml
   - service.yaml
   - ingress.yaml
+  - signup-deployment.yaml
+  - signup-service.yaml
+  - signup-networkpolicy.yaml
+configMapGenerator:
+  - name: hello-confidence-signup
+    files:
+      - signup-server.py

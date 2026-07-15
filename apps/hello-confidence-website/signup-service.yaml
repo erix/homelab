@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-confidence-signup
+  namespace: default
+  labels:
+    app: hello-confidence-signup
+spec:
+  selector:
+    app: hello-confidence-signup
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
