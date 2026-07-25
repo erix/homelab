@@ -25,6 +25,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: trading-dashboard-config
+            - secretRef:
+                name: trading-dashboard-operator
           volumeMounts:
             - name: positions-db
               mountPath: /data/db
