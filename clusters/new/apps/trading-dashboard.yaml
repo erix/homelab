@@ -17,8 +17,8 @@ spec:
     name: flux-system
   images:
     - name: ghcr.io/erix/trading-dashboard
-      # Held on the last verified release until reconciliation rollout prerequisites are complete.
-      newTag: master-60-sha-8cff1c9
+      # Held for explicit, reviewed rollouts; image automation remains suspended.
+      newTag: master-86-sha-77568b8
 ---
 apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageRepository
