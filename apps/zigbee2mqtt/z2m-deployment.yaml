@@ -5,6 +5,11 @@ metadata:
   namespace: home-automation
 spec:
   replicas: 1
+  # The Zigbee coordinator serial device can only be opened by one pod.
+  # Recreate prevents rolling updates from starting the replacement before
+  # the old pod releases /dev/ttyUSB0.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: z2m
