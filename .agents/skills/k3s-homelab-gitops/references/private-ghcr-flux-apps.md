@@ -1,4 +1,4 @@
-# Private GHCR app deployment pattern in Erik's homelab
+# Private GHCR app deployment pattern in this repository's homelab
 
 Use this when adding a private GitHub app repo that publishes a private GHCR image and is deployed from `erix/homelab` via Flux.
 
@@ -27,8 +27,9 @@ Use this when adding a private GitHub app repo that publishes a private GHCR ima
    ```
 4. Ensure the same dockerconfig secret exists in the app namespace. The cluster has `ghcr-credentials` in `default` and `flux-system`; for a dedicated namespace, copy/apply metadata only without printing secret data:
    ```bash
-   export KUBECONFIG=/home/erix/.kube/config
-   K=/home/erix/.local/bin/kubectl
+   : "${KUBECONFIG:=$HOME/.kube/config}"
+export KUBECONFIG
+   K="${K:-$(command -v kubectl)}"
    $K get namespace <app> >/dev/null 2>&1 || $K create namespace <app>
    $K -n default get secret ghcr-credentials -o yaml \
      | python3 -c 'import sys,yaml; d=yaml.safe_load(sys.stdin); d["metadata"]={"name":"ghcr-credentials","namespace":"<app>"}; print(yaml.safe_dump(d, sort_keys=False))' \
@@ -97,9 +98,10 @@ Use this when adding a private GitHub app repo that publishes a private GHCR ima
 ## Verification
 
 ```bash
-export KUBECONFIG=/home/erix/.kube/config
-F=/home/erix/.local/bin/flux
-K=/home/erix/.local/bin/kubectl
+: "${KUBECONFIG:=$HOME/.kube/config}"
+export KUBECONFIG
+F="${F:-$(command -v flux)}"
+K="${K:-$(command -v kubectl)}"
 
 $F reconcile source git flux-system
 $F reconcile kustomization apps --with-source

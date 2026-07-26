@@ -1,6 +1,6 @@
 # Public static site via Cloudflare Tunnel
 
-Use this when one website in Erik's k3s cluster must become public while the shared Traefik ingress and all other homelab services remain private.
+Use this when one website in this repository's k3s cluster must become public while the shared Traefik ingress and all other homelab services remain private.
 
 ## Target architecture
 

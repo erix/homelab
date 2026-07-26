@@ -1,6 +1,6 @@
 # Stable Homelab Hostnames: UniFi DHCP + Pi-hole DNS
 
-Use this when Erik wants stable SSH names for ordinary LAN computers without relying on remembered IP addresses.
+Use this when the operator wants stable SSH names for ordinary LAN computers without relying on remembered IP addresses.
 
 ## Scope and policy
 
@@ -57,9 +57,9 @@ Create a values overlay like:
 ```yaml
 dnsmasq:
   additionalHostsEntries:
-    - "192.168.1.100 kaiburg.home.arpa kaiburg"
-    - "192.168.1.166 mac-mini.home.arpa mac-mini"
-    - "192.168.1.212 imac.home.arpa imac"
+    - "<reserved-ip> <host>.home.arpa <host>"
+    - "<reserved-ip> <second-host>.home.arpa <second-host>"
+    - "<reserved-ip> <third-host>.home.arpa <third-host>"
 ```
 
 Apply conservatively:

@@ -1,132 +1,164 @@
-# Tailscale routing notes for Erik's k3s homelab
+# Tailscale routing for a k3s homelab
 
-## Intended shape
+Use this reference when clients need private access to Kubernetes ingress, MetalLB addresses, or LAN services through Tailscale.
 
-Use `kaiburg` as a Tailscale **subnet router** for the home/k3s networks:
+Do not assume the agent is running on the subnet router, that the router has a particular hostname, or that example CIDRs are correct. Discover all three layers independently:
 
-- `192.168.1.0/24` — main home LAN where `kaiburg` lives.
-- `192.168.11.0/24` — k3s/MetalLB network; Traefik is at `192.168.11.200`.
+1. Kubernetes Service/Ingress addresses.
+2. Host routing and forwarding state on the proposed subnet router.
+3. Tailnet route approval and client route acceptance.
 
-Do **not** use `kaiburg` as an exit node by default. It lacks working IPv6 internet egress, and iOS exit-node use can blackhole general internet traffic (Telegram, web, etc.) when `::/0` is advertised but not actually routable upstream.
+## Choose the access model
 
-Desired client state for accessing homelab services:
+- **Per-service exposure:** annotate selected Services for the Tailscale Kubernetes operator. Best for a small number of explicit services.
+- **Ingress exposure:** expose an ingress controller or use a Tailscale ingress class. Best when existing host-based routing should remain central.
+- **Subnet routing:** advertise the LAN and/or MetalLB CIDRs from a Tailscale node. Best for LAN-like access to many existing services.
+- **Exit node:** advertise default routes for all internet traffic. Not required for homelab service access and unsafe unless both IPv4 and IPv6 egress work.
 
-- Tailscale connected.
-- Exit node: **None**.
-- Subnet routes accepted by the client.
-
-Then normal service URLs should work because public DNS resolves them to the MetalLB/Traefik LAN IP:
-
-- `hass.erix-homelab.site -> 192.168.11.200`
-- `immich.erix-homelab.site -> 192.168.11.200`
-- `paperless.erix-homelab.site -> 192.168.11.200`
-- `plex.erix-homelab.site -> 192.168.11.200`
-
-## Server-side commands
-
-Check current Tailscale routing state on `kaiburg`:
+## Discover Kubernetes networks and endpoints
 
 ```bash
-tailscale debug prefs | jq '{AdvertiseRoutes,NoSNAT,NetfilterMode,RunSSH,Hostname}'
-tailscale status --json | jq '.Self | {DNSName,HostName,TailscaleIPs,AllowedIPs,PrimaryRoutes,Online}'
+"$K" get nodes -o wide
+"$K" get svc -A -o wide
+"$K" get ingress -A -o wide
+"$K" get ipaddresspools.metallb.io -A -o yaml 2>/dev/null || true
+"$K" get svc -A -o json \
+  | jq -r '.items[] | select(.status.loadBalancer.ingress) | [.metadata.namespace,.metadata.name,([.status.loadBalancer.ingress[] | (.ip // .hostname)] | join(","))] | @tsv'
 ```
 
-Set the clean subnet-router-only config:
+Derive `LAN_CIDR`, `SERVICE_CIDR`, `INGRESS_IP`, and representative `INGRESS_HOST` from current routing, manifests, DNS, and live Services. Do not copy them blindly from old documentation.
+
+## Discover the candidate subnet router
+
+Run these checks **on the proposed router host**, whether reached locally, through SSH, CI, or another agent gateway:
+
+```bash
+hostname -f 2>/dev/null || hostname
+command -v tailscale
+command -v ip
+
+tailscale status
+tailscale debug prefs | jq '{AdvertiseRoutes,AdvertiseExitNode,RouteAll,NoSNAT,NetfilterMode}'
+ip -4 route
+ip -6 route
+sysctl net.ipv4.ip_forward net.ipv6.conf.all.forwarding
+```
+
+Record the execution host and observed routes in the task summary. If the harness cannot prove it is running on the intended router, do not run `sudo tailscale set`.
+
+## Advertise subnet routes
+
+Set discovered values explicitly:
+
+```bash
+LAN_CIDR='<discovered-lan-cidr>'
+SERVICE_CIDR='<discovered-k3s-or-metallb-cidr>'
+
+sudo tailscale set --advertise-routes="$LAN_CIDR,$SERVICE_CIDR"
+tailscale debug prefs | jq '{AdvertiseRoutes,AdvertiseExitNode}'
+```
+
+Advertising does not activate routes by itself. An administrator must approve them in the Tailscale admin console. Verify activation without assuming a specific machine name:
+
+```bash
+tailscale status --json \
+  | jq '.Self | {HostName,DNSName,TailscaleIPs,AllowedIPs,PrimaryRoutes,Online}'
+```
+
+Interpretation:
+
+- `AdvertiseRoutes` contains the requested CIDRs: the node is offering them.
+- `PrimaryRoutes` contains the CIDRs: the tailnet has approved/selected them.
+- Missing `PrimaryRoutes`: stop and request route approval; do not compensate by changing Kubernetes Services.
+
+## Verify forwarding and client traffic
+
+On Linux, IPv4 forwarding must be enabled. Follow the host's configuration-management method rather than making an undocumented permanent sysctl change.
+
+```bash
+sysctl net.ipv4.ip_forward
+sudo nft list ruleset 2>/dev/null | grep -i tailscale || true
+sudo iptables -L FORWARD -n -v 2>/dev/null || true
+sudo iptables -L ts-forward -n -v 2>/dev/null || true
+```
+
+Ask the client to make one bounded request while watching counters or a narrow packet capture:
+
+```bash
+CLIENT_TS_IP='<client-tailscale-ip>'
+INGRESS_IP='<discovered-ingress-or-service-ip>'
+
+sudo timeout 10 tcpdump -n -i any \
+  "host $CLIENT_TS_IP and host $INGRESS_IP"
+```
+
+If no packets arrive, focus on route approval, client `accept-routes`, ACL/grant policy, conflicting VPNs, and stale mobile VPN state. If packets arrive but no response returns, inspect forwarding/firewall and the destination service.
+
+## Test the actual protocol
+
+ICMP can fail while HTTP/HTTPS succeeds. Test direct TCP first, then host-based routing:
+
+```bash
+INGRESS_IP='<discovered-ingress-ip>'
+INGRESS_HOST='<discovered-ingress-hostname>'
+
+curl -fsSI --max-time 5 "http://$INGRESS_IP/" || true
+curl -kfsSI --max-time 10 \
+  --resolve "$INGRESS_HOST:443:$INGRESS_IP" \
+  "https://$INGRESS_HOST/"
+```
+
+For a non-HTTP service, test its real TCP/UDP protocol rather than substituting ping.
+
+## Exit-node safety
+
+Enable exit-node advertisement only when the user explicitly wants all client internet traffic routed through this node and both families have working egress:
+
+```bash
+curl -4fsS --max-time 10 https://ifconfig.co >/dev/null
+curl -6fsS --max-time 10 https://ifconfig.co >/dev/null
+```
+
+If either required path fails, do not advertise an exit node. Subnet routes remain sufficient for homelab access.
+
+When requirements are met:
+
+```bash
+sudo tailscale set \
+  --advertise-exit-node \
+  --advertise-routes="$LAN_CIDR,$SERVICE_CIDR"
+```
+
+Rollback exit-node advertisement without dropping subnet access:
 
 ```bash
 sudo tailscale set \
   --advertise-exit-node=false \
-  --advertise-routes=192.168.1.0/24,192.168.11.0/24
+  --advertise-routes="$LAN_CIDR,$SERVICE_CIDR"
 ```
 
-Verify forwarding sysctls when subnet routing is involved:
+Verify the intended flags afterward; never infer success from command exit alone.
+
+## Kubernetes operator checks
+
+Per-service exposure is separate from host subnet routing:
 
 ```bash
-sysctl net.ipv4.ip_forward net.ipv6.conf.all.forwarding net.ipv6.conf.default.forwarding
+"$K" get svc -A -o json \
+  | jq -r '.items[] | select(.metadata.annotations."tailscale.com/expose" == "true") | [.metadata.namespace,.metadata.name] | @tsv'
+"$K" get pods -n tailscale -o wide
 ```
 
-Persist if needed:
+If Flux owns a Service, commit exposure annotations to Git rather than leaving a live-only mutation.
 
-```bash
-sudo tee /etc/sysctl.d/99-tailscale-routing.conf >/dev/null <<'EOF'
-# Required for Tailscale subnet routing and exit node relay on kaiburg.
-net.ipv4.ip_forward = 1
-net.ipv6.conf.all.forwarding = 1
-net.ipv6.conf.default.forwarding = 1
-EOF
-sudo sysctl --system
-```
+## Completion criteria
 
-Even for subnet routing, enabling IPv6 forwarding is harmless and prevents Tailscale/admin health warnings if exit-node testing is temporarily enabled.
-
-## Exit-node pitfall
-
-Tailscale treats exit nodes as advertising both default routes:
-
-- `0.0.0.0/0`
-- `::/0`
-
-On `kaiburg`, IPv4 internet worked but IPv6 internet egress did not. Test with:
-
-```bash
-python3 - <<'PY'
-import socket
-for host, port, fam in [('1.1.1.1',443,socket.AF_INET),('2606:4700:4700::1111',443,socket.AF_INET6)]:
-    s=socket.socket(fam, socket.SOCK_STREAM); s.settimeout(3)
-    try:
-        s.connect((host,port)); print(f'{host}:{port} OK')
-    except Exception as e:
-        print(f'{host}:{port} FAIL {type(e).__name__}: {e}')
-    finally:
-        s.close()
-PY
-```
-
-If IPv6 egress fails, do not recommend `kaiburg` as an exit node for iOS clients. It can make “Tailscale connected but nothing works” because general phone traffic is routed through an incomplete exit path.
-
-## Debugging client subnet-route issues
-
-If a phone cannot access `http://192.168.11.200`:
-
-1. Confirm `kaiburg` has active `PrimaryRoutes` for both subnets.
-2. Confirm the phone has Tailscale connected and **Exit Node = None**.
-3. Refresh iOS route state: disconnect/reconnect Tailscale; if needed delete/recreate the iOS VPN profile.
-4. Check whether traffic reaches `kaiburg` at all:
-
-```bash
-sudo iptables -vxnL ts-forward
-sudo iptables -t nat -vxnL ts-postrouting
-sudo timeout 5 tcpdump -n -i any 'host <PHONE_TAILSCALE_IP> or host 192.168.11.200'
-```
-
-If counters/tcpdump stay at zero while the user tests from the phone, the phone is not sending subnet-route traffic to `kaiburg`; focus on client route acceptance, stale iOS VPN state, or Tailscale ACLs.
-
-## Testing note: ping is misleading
-
-`192.168.11.200` (Traefik/MetalLB) did not respond to ICMP ping even from `kaiburg`, while TCP ports 80/443 worked. Do not use ping as the primary test for Traefik/MetalLB reachability.
-
-Use TCP/HTTP tests instead:
-
-```bash
-python3 - <<'PY'
-import http.client
-for host in ['hass.erix-homelab.site','immich.erix-homelab.site','paperless.erix-homelab.site','plex.erix-homelab.site']:
-    try:
-        c=http.client.HTTPConnection('192.168.11.200',80,timeout=3)
-        c.request('GET','/',headers={'Host':host})
-        r=c.getresponse()
-        print(f'{host}: HTTP {r.status} location={r.getheader("location")}')
-        c.close()
-    except Exception as e:
-        print(f'{host}: FAIL {type(e).__name__}: {e}')
-PY
-```
-
-## k3s Tailscale Operator role
-
-The k3s Tailscale Operator is installed and useful for selected per-service identities, currently including:
-
-- `default-ib-gateway.tail9139a.ts.net`
-- `default-ibeam.tail9139a.ts.net`
-
-Keep this pattern for special services such as trading/IB gateway access. Avoid exposing every Traefik web app individually with `tailscale.com/expose=true`; subnet routing keeps the normal `*.erix-homelab.site` URLs and avoids tailnet machine clutter.
+- [ ] Access model was chosen explicitly.
+- [ ] Router host identity and routes were discovered, not assumed.
+- [ ] Advertised and approved routes match current LAN/service CIDRs.
+- [ ] Client accepts routes and sends packets to the router.
+- [ ] Forwarding/firewall allows the path.
+- [ ] Direct service or ingress IP works over the actual protocol.
+- [ ] Host-based routing and TLS work where applicable.
+- [ ] Exit-node advertisement remains off unless IPv4 and IPv6 egress requirements pass.
+- [ ] Any Kubernetes exposure change is represented in GitOps and reconciled.

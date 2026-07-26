@@ -13,7 +13,7 @@ Use this procedure for the Helm-managed Pi-hole release in namespace `default`.
 
 ## Preflight
 
-1. Fast-forward `/home/erix/Projects/homelab` to `origin/main` and require a clean tree.
+1. Fast-forward `$REPO_ROOT` to `origin/main` and require a clean tree.
 2. Inspect the live release and workload:
 
 ```bash
@@ -30,7 +30,7 @@ Sanitize live values before showing any output. The live values can differ from 
 5. Baseline:
    - `pihole status` says FTL listens on TCP/UDP 53 and blocking is enabled.
    - Public resolution through `@192.168.11.222` works.
-   - `kaiburg.home.arpa` and other expected local records resolve.
+   - At least one known `<host>.home.arpa` record and the other expected local records resolve.
    - A known blocked domain returns `0.0.0.0`.
    - TCP DNS works (`dig +tcp`).
    - Cloudflared resolves through `127.0.0.1:5053` inside its sidecar.
@@ -48,7 +48,7 @@ For a consistent SQLite/PVC backup:
 1. Set a cleanup trap that deletes the temporary pod and restores one Pi-hole replica.
 2. Scale `deployment/pihole` to zero and wait for its pod to disappear.
 3. Mount `pihole-pvc` read-only in a temporary Alpine pod.
-4. Stream `tar -C /data -czf - .` to `/home/erix/backups/pihole/`.
+4. Stream `tar -C /data -czf - .` to `$HOME/backups/pihole/`.
 5. Run `gzip -t`, record `sha256sum`, delete the temporary pod, restore one replica, and verify `pihole status`.
 
 ## Dry-run and upgrade

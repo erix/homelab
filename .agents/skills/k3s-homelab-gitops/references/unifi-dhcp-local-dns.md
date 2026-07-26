@@ -1,10 +1,10 @@
 # UniFi DHCP Reservations and Pi-hole Local DNS
 
-Use this for stable LAN hostnames for ordinary DHCP clients on Erik's home network. This is separate from Kubernetes service discovery and should not be used to reconfigure infrastructure that already has statically configured management addresses.
+Use this for stable LAN hostnames for ordinary DHCP clients on this repository's home network. This is separate from Kubernetes service discovery and should not be used to reconfigure infrastructure that already has statically configured management addresses.
 
 ## Scope and current LANs
 
-- **Default LAN**: UniFi network `Default`, gateway/subnet `192.168.1.1/24`, DHCP enabled. This is the LAN for desktop/server clients such as Kaiburg, Macs, and TrueNAS.
+- **Default LAN**: UniFi network `Default`, gateway/subnet `192.168.1.1/24`, DHCP enabled. This is the LAN for ordinary desktop/server clients.
 - **IoT** (`192.168.3.1/24`) and **Homelab** (`192.168.11.1/24`) are distinct networks; do not apply the Default-LAN DHCP search-domain change to them by accident.
 - Pi-hole DNS is exposed at `192.168.11.222` and is installed as Helm release `pihole` in namespace `default`.
 
@@ -38,7 +38,7 @@ Use `/proxy/network/api/s/<site>` only as a fallback prefix if the direct endpoi
 
 3. Re-read `GET /rest/user/<client-_id>` and verify both `use_fixedip == true` and the expected `fixed_ip`.
 
-This pattern successfully verified reservations for Kaiburg, Mac Mini, iMac, and TrueNAS. Kaiburg and TrueNAS were already reserved; do not overwrite an existing stable reservation unless the user requests a different address.
+This pattern successfully verified reservations for several existing desktop and server clients. Do not overwrite an existing stable reservation unless the user requests a different address.
 
 ## Pi-hole records managed through Helm
 
@@ -47,8 +47,8 @@ Do not edit the running Pi-hole container or ConfigMap by hand. Update the Helm 
 ```yaml
 dnsmasq:
   additionalHostsEntries:
-    - "192.168.1.100 kaiburg.home.arpa kaiburg"
-    - "192.168.1.166 mac-mini.home.arpa mac-mini"
+    - "<reserved-ip> <host>.home.arpa <host>"
+    - "<reserved-ip> <second-host>.home.arpa <second-host>"
 ```
 
 Important: Helm list values **replace**, rather than append to, prior arrays. When adding a host, submit the complete existing `additionalHostsEntries` list, not only the new line.
@@ -75,6 +75,6 @@ kubectl -n default exec <pihole-pod> -c pihole -- \
 
 ## Search domain rollout
 
-For short LAN commands such as `ssh kaiburg`, inspect the UniFi `Default` network object first, then set the DHCP search/domain field to `home.arpa` using the appropriate field name returned by the controller version. Preserve all unrelated network configuration fields and re-read the object after the update. Clients need a DHCP lease renewal before the search domain takes effect.
+For short LAN commands such as `ssh <host>`, inspect the UniFi `Default` network object first, then set the DHCP search/domain field to `home.arpa` using the appropriate field name returned by the controller version. Preserve all unrelated network configuration fields and re-read the object after the update. Clients need a DHCP lease renewal before the search domain takes effect.
 
-Tailscale MagicDNS remains the complementary remote-access path: use short names or `*.tail9139a.ts.net` when away from the LAN. Do not replace subnet routing or make router port forwards as part of this DNS workflow.
+Tailscale MagicDNS remains the complementary remote-access path: use short names or the tailnet MagicDNS suffix when away from the LAN. Do not replace subnet routing or make router port forwards as part of this DNS workflow.

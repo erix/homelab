@@ -1,20 +1,21 @@
 # Home Assistant GitOps Upgrade Notes
 
-Use this when updating Erik's Home Assistant deployment in the k3s homelab (`apps/home-assistant`, namespace `home-automation`).
+Use this when updating this repository's Home Assistant deployment in the k3s homelab (`apps/home-assistant`, namespace `home-automation`).
 
 ## Safe upgrade sequence
 
 1. Sync the homelab repo first:
    ```bash
-   cd /home/erix/Projects/homelab
+   cd "$REPO_ROOT"
    git fetch origin main && git pull --ff-only origin main
    ```
 
 2. Inspect current cluster state:
    ```bash
-   export KUBECONFIG=/home/erix/.kube/config
-   K=/home/erix/.local/bin/kubectl
-   F=/home/erix/.local/bin/flux
+   : "${KUBECONFIG:=$HOME/.kube/config}"
+export KUBECONFIG
+   K="${K:-$(command -v kubectl)}"
+   F="${F:-$(command -v flux)}"
    $F get kustomizations -A | grep -E 'NAME|home-assistant|apps'
    $K -n home-automation get statefulset,deploy,pod,svc,ingress -o wide
    $K get pods -A --field-selector=status.phase!=Running,status.phase!=Succeeded
@@ -29,7 +30,7 @@ Use this when updating Erik's Home Assistant deployment in the k3s homelab (`app
 
 4. Create a pre-upgrade config backup without printing archive contents, because `/config` can contain secrets:
    ```bash
-   BACKUP_DIR=/home/erix/backups/homeassistant
+   BACKUP_DIR=$HOME/backups/homeassistant
    mkdir -p "$BACKUP_DIR"
    BACKUP_FILE="$BACKUP_DIR/homeassistant-config-pre-upgrade-$(date +%Y%m%d-%H%M%S).tar.gz"
    $K -n home-automation exec homeassistant-0 -c homeassistant -- tar -C /config -czf - . > "$BACKUP_FILE"
@@ -106,4 +107,4 @@ Look for errors like `mkdir: can't create directory '/backups/homeassistant': Pe
 $K -n home-automation delete job <job-name>
 ```
 
-For upgrades, if the CronJob is not proven healthy, create the local `/home/erix/backups/homeassistant/...tar.gz` pre-upgrade backup instead of proceeding without a known restore point.
+For upgrades, if the CronJob is not proven healthy, create the local `$HOME/backups/homeassistant/...tar.gz` pre-upgrade backup instead of proceeding without a known restore point.

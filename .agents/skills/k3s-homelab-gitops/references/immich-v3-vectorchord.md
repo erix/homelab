@@ -1,4 +1,4 @@
-# Immich v3 VectorChord migration on Erik's k3s homelab
+# Immich v3 VectorChord migration on this repository's k3s homelab
 
 Use when Immich server starts crash-looping after a v3 upgrade or logs vector-extension errors.
 
@@ -35,9 +35,10 @@ This image contains pgvector, VectorChord, and pgvecto.rs so existing backups/da
 1. Gather state:
 
 ```bash
-export KUBECONFIG=/home/erix/.kube/config
-K=/home/erix/.local/bin/kubectl
-F=/home/erix/.local/bin/flux
+: "${KUBECONFIG:=$HOME/.kube/config}"
+export KUBECONFIG
+K="${K:-$(command -v kubectl)}"
+F="${F:-$(command -v flux)}"
 
 $F -n flux-system get kustomization immich
 $K -n immich get deploy,sts,pod,svc,ingress,pvc -o wide
@@ -49,8 +50,8 @@ $K -n immich exec immich-postgres-0 -- sh -c \
 2. Back up the DB before changing the Postgres image. Do not print data or secrets:
 
 ```bash
-mkdir -p /home/erix/backups/immich
-backup="/home/erix/backups/immich/immich-db-pre-vectorchord-$(date -u +%Y%m%dT%H%M%SZ).dump"
+mkdir -p $HOME/backups/immich
+backup="$HOME/backups/immich/immich-db-pre-vectorchord-$(date -u +%Y%m%dT%H%M%SZ).dump"
 $K -n immich exec immich-postgres-0 -- sh -c \
   'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --no-owner --no-privileges' > "$backup"
 file "$backup"
@@ -67,7 +68,7 @@ sha256sum "$backup"
 4. Validate, commit, push, and reconcile:
 
 ```bash
-cd /home/erix/Projects/homelab
+cd "$REPO_ROOT"
 git pull --ff-only origin main
 $K apply --dry-run=client -f apps/immich/postgres.yaml
 git add apps/immich/postgres.yaml

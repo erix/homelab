@@ -1,4 +1,4 @@
-# Immich v3 VectorChord migration on Erik's k3s homelab
+# Immich v3 VectorChord migration on this repository's k3s homelab
 
 ## Trigger
 
@@ -23,7 +23,7 @@ kubectl -n immich get pods
 
 ## Root cause
 
-Immich `v3.0.0+` drops pgvecto.rs support. Erik's manifests originally used:
+Immich `v3.0.0+` drops pgvecto.rs support. this repository's manifests originally used:
 
 ```yaml
 image: tensorchord/pgvecto-rs:pg14-v0.2.0
@@ -42,9 +42,10 @@ The image switch lets Immich create/use `vchord` and reindex during startup. Do 
 1. Confirm current state and exact error:
 
 ```bash
-export KUBECONFIG=/home/erix/.kube/config
-K=/home/erix/.local/bin/kubectl
-F=/home/erix/.local/bin/flux
+: "${KUBECONFIG:=$HOME/.kube/config}"
+export KUBECONFIG
+K="${K:-$(command -v kubectl)}"
+F="${F:-$(command -v flux)}"
 
 $K -n immich get deploy,sts,pod,svc,ingress,pvc -o wide
 $K -n immich logs deploy/immich-server --previous --tail=200
@@ -55,8 +56,8 @@ $K -n immich exec immich-postgres-0 -- sh -c \
 2. Back up the database before changing the Postgres image. Do not print DB contents or secrets.
 
 ```bash
-mkdir -p /home/erix/backups/immich
-backup="/home/erix/backups/immich/immich-db-pre-vectorchord-$(date -u +%Y%m%dT%H%M%SZ).dump"
+mkdir -p $HOME/backups/immich
+backup="$HOME/backups/immich/immich-db-pre-vectorchord-$(date -u +%Y%m%dT%H%M%SZ).dump"
 $K -n immich exec immich-postgres-0 -- sh -c \
   'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc --no-owner --no-privileges' > "$backup"
 ls -lh "$backup"
@@ -70,7 +71,7 @@ If local `pg_restore` is missing, validate the TOC inside the Postgres pod inste
 cat "$backup" | $K -n immich exec -i immich-postgres-0 -- pg_restore -l | sed -n '1,20p'
 ```
 
-3. Update GitOps manifest in `/home/erix/Projects/homelab/apps/immich/postgres.yaml`:
+3. Update GitOps manifest in `$REPO_ROOT/apps/immich/postgres.yaml`:
 
 ```diff
 - image: tensorchord/pgvecto-rs:pg14-v0.2.0
@@ -80,7 +81,7 @@ cat "$backup" | $K -n immich exec -i immich-postgres-0 -- pg_restore -l | sed -n
 4. Validate, commit, push, reconcile:
 
 ```bash
-cd /home/erix/Projects/homelab
+cd "$REPO_ROOT"
 git fetch origin main && git pull --ff-only origin main
 $K apply --dry-run=client -f apps/immich/postgres.yaml
 git diff -- apps/immich/postgres.yaml

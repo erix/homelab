@@ -1,10 +1,10 @@
 # Zigbee2MQTT GitOps upgrades
 
-Use this for Erik's Zigbee2MQTT Deployment at `apps/zigbee2mqtt`, namespace `home-automation`, Deployment `z2m`.
+Use this for this repository's Zigbee2MQTT Deployment at `apps/zigbee2mqtt`, namespace `home-automation`, Deployment `z2m`.
 
 ## Safety preflight
 
-1. Sync `/home/erix/Projects/homelab` with `origin/main` and require a clean worktree.
+1. Sync `$REPO_ROOT` with `origin/main` and require a clean worktree.
 2. Verify the running image, Ready state, restart count, recent true log errors/warnings, MQTT publish activity, and Home Assistant state for a known Zigbee entity such as `switch.garden_water`.
 3. Never print `/app/data/configuration.yaml`: it can contain MQTT credentials and Zigbee network keys. Inspect only explicitly allowlisted non-secret characteristics. Do not print Kubernetes Secret data.
 4. Check whether `/app/data/external_converters` exists and whether `external_converters` is configured. Zigbee2MQTT 2.6.1 changed the external-converter API, especially for Tuya converters. Zigbee2MQTT 2.11 disables external JavaScript by default for new installs; existing installations should still be checked.
@@ -15,7 +15,7 @@ Use this for Erik's Zigbee2MQTT Deployment at `apps/zigbee2mqtt`, namespace `hom
 Create a protected local archive without printing its contents:
 
 ```bash
-BACKUP_DIR=/home/erix/backups/zigbee2mqtt
+BACKUP_DIR=$HOME/backups/zigbee2mqtt
 mkdir -p "$BACKUP_DIR"
 BACKUP_FILE="$BACKUP_DIR/zigbee2mqtt-data-pre-<version>-$(date +%Y%m%d-%H%M%S).tar.gz"
 $K -n home-automation exec deploy/z2m -- tar -C /app/data -czf - . > "$BACKUP_FILE"

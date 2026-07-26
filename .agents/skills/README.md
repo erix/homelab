@@ -2,6 +2,8 @@
 
 These skills follow the [Agent Skills](https://agentskills.io/) directory format and are kept with the homelab source so coding-agent harnesses can use the same operational guidance as Hermes.
 
+The k3s skill is workstation-neutral: agents must discover the repository root, tool paths, kubeconfig, Kubernetes context, and any remote execution target at runtime. Examples must not be treated as authorization to assume a particular username, home directory, or access host.
+
 ## Included skills
 
 - `k3s-homelab-gitops` — repository/cluster topology, Flux workflows, safe rollout recipes, and homelab-specific verification.

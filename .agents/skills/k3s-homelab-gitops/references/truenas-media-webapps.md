@@ -1,17 +1,17 @@
-# TrueNAS-backed media web apps on Erik's k3s
+# TrueNAS-backed media web apps on this repository's k3s
 
 Session-derived pattern from creating a meditation web player backed by TrueNAS media.
 
 ## When to use
 
-Use this when building a small web app that serves media already stored on TrueNAS and should run in Erik's k3s cluster.
+Use this when building a small web app that serves media already stored on TrueNAS and should run in this repository's k3s cluster.
 
 ## Proven pattern
 
 1. Put the media in its own TrueNAS dataset when possible, e.g. `tank/meditations` mounted at `/mnt/tank/meditations`.
 2. Keep SMB for human/macOS access, but add a **read-only NFS export** for k3s:
    - Path: dataset mountpoint, e.g. `/mnt/tank/meditations`
-   - Networks: `192.168.11.0/24`
+   - Networks: the discovered k3s node CIDR, e.g. `<k3s-node-cidr>`
    - `ro: true`
    - Enable/reload NFS after creating the export.
 3. In k3s, use a static `PersistentVolume` with `ReadOnlyMany` and `nfsvers=4.1`, then a PVC bound by `volumeName`.
@@ -43,15 +43,20 @@ For the meditation-player session, product titles/covers were fetched from the N
 
 Response shape: `data[0].metadata[0].total` and `data[0].data[]`, where each product has `title`, `images[]`, `pricing`, `variants[]`, and category metadata. At discovery time the Meditations category had 67 products; all had `images[]` suitable for album art. Use this API for catalog/art updates before falling back to browser scraping.
 
-Known-good implementation in Erik's app repo: `/home/erix/Projects/meditation-player/scripts/fetch-shop-covers.py` downloads `images[0]` for every shop product into `public/shop-covers/`, writes `manifest.json` and `cover-map.json`, then `scripts/generate-catalog.py` prefers matched shop covers over generated SVGs. The matcher intentionally combines explicit mappings (e.g. BOTEC X/XI, Project Coherence, Count Your Blessings, Changing Boxes variants) with a high-threshold fuzzy match; avoid broad substring matching such as `"1" in "Advanced Workshop Vol. 1"`, which incorrectly assigns covers to workshop bundles.
+The companion application's `scripts/fetch-shop-covers.py` downloads `images[0]` for every shop product into `public/shop-covers/`, writes `manifest.json` and `cover-map.json`, then `scripts/generate-catalog.py` prefers matched shop covers over generated SVGs. Discover that repository's checkout rather than assuming it is beside the homelab checkout. The matcher intentionally combines explicit mappings (e.g. BOTEC X/XI, Project Coherence, Count Your Blessings, Changing Boxes variants) with a high-threshold fuzzy match; avoid broad substring matching such as `"1" in "Advanced Workshop Vol. 1"`, which incorrectly assigns covers to workshop bundles.
 
 To refresh the catalog safely from the server-backed media mirror:
 
 ```bash
-cd /home/erix/Projects/meditation-player
-rsync -a root@192.168.1.179:/mnt/tank/meditations/ /home/erix/Downloads/drive_to_truenas_meditations/Meditations/
+APP_ROOT='<path-to-companion-app-checkout>'
+MEDIA_MIRROR='<path-to-local-media-mirror>'
+NAS_HOST='<truenas-host-or-ip>'
+
+cd "$APP_ROOT"
+mkdir -p "$MEDIA_MIRROR"
+rsync -a "root@$NAS_HOST:/mnt/tank/meditations/" "$MEDIA_MIRROR/"
 python3 scripts/fetch-shop-covers.py
-MEDIA_ROOT=/home/erix/Downloads/drive_to_truenas_meditations/Meditations python3 scripts/generate-catalog.py
+MEDIA_ROOT="$MEDIA_MIRROR" python3 scripts/generate-catalog.py
 npm run lint && npm run build
 ```
 
@@ -74,7 +79,7 @@ spec:
     - nfsvers=4.1
     - ro
   nfs:
-    server: 192.168.1.179
+    server: <truenas-host-or-ip>
     path: /mnt/tank/meditations
 ---
 apiVersion: v1
@@ -127,9 +132,9 @@ For phone-width album libraries, avoid a "select album, then manually scroll pas
 
 ## Pitfalls
 
-- Do not mount SMB into Kubernetes for this pattern; NFS is simpler and already used in Erik's cluster.
+- Do not mount SMB into Kubernetes for this pattern; NFS is simpler and already used in this repository's cluster.
 - Keep the NFS export read-only unless the app truly needs writes.
-- Remember that local `~/Projects/homelab` can lag `origin/main`; pull/fetch before adding manifests.
+- Remember that local `$REPO_ROOT` can lag `origin/main`; pull/fetch before adding manifests.
 - For apps with media paths containing spaces/apostrophes/non-ASCII, catalog URLs must percent-encode each path segment, not the whole path with slashes encoded.
 - When regenerating catalogs from TrueNAS media on the Hermes host, make sure `MEDIA_ROOT` points to a real local mirror or mounted path. The default `/mnt/tank/...` may not exist locally and can silently produce an empty `catalog.json`; verify album/track counts immediately after generation.
 - For shop-cover matching, do not use naive substring matching or low fuzzy thresholds. Short titles/ordinals (`I`, `1`, `Vol. 1`) can collide with Advanced Workshop bundles and nearby sequels. Prefer explicit mappings for known variants and only overwrite an existing cover-map entry when the new score is higher.

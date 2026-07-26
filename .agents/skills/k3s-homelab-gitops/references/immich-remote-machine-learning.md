@@ -12,7 +12,7 @@ http://192.168.1.90:3003
 
 If the server logs show `Machine learning server became unhealthy (<url>)`, verify network reachability from both:
 
-1. the k3s host (`kaiburg`), and
+1. a verified cluster-access execution host, and
 2. inside the `immich-server` pod.
 
 Do not assume the local `immich-machine-learning` Deployment is usable as a fallback unless a Kubernetes Service exists for it. In the observed manifests, the Deployment existed but `service/immich-machine-learning` did not, so `http://immich-machine-learning:3003` would not resolve.
@@ -20,9 +20,10 @@ Do not assume the local `immich-machine-learning` Deployment is usable as a fall
 ## Inspection commands
 
 ```bash
-export KUBECONFIG=/home/erix/.kube/config
-K=/home/erix/.local/bin/kubectl
-F=/home/erix/.local/bin/flux
+: "${KUBECONFIG:=$HOME/.kube/config}"
+export KUBECONFIG
+K="${K:-$(command -v kubectl)}"
+F="${F:-$(command -v flux)}"
 
 $K -n immich get deploy,statefulset,pod,svc,ingress -o wide
 $K -n immich logs deploy/immich-machine-learning --tail=80
@@ -114,7 +115,7 @@ http://immich-machine-learning:3003
 ## Verification checklist
 
 - [ ] Remote host answers `curl http://<host>:3003/ping` locally.
-- [ ] `kaiburg` can reach `<host>:3003`.
+- [ ] the verified cluster-access execution host can reach `<host>:3003`.
 - [ ] `immich-server` pod can reach `<host>:3003`.
 - [ ] Immich Admin UI Machine Learning URL points to the intended endpoint.
 - [ ] Server logs stop reporting `Machine learning server became unhealthy`.

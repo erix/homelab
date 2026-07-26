@@ -1,14 +1,15 @@
 # Subscription Tracker API Notes
 
-Session-derived notes for querying Erik's `subscription-tracker` app in the k3s homelab without exposing secrets.
+Session-derived notes for querying this repository's `subscription-tracker` app in the k3s homelab without exposing secrets.
 
 ## Access pattern
 
 The app runs in `default` as `deployment/subscription-tracker`, listens on container port `8000`, and has public ingress host `subs.erix-homelab.site`. For safe internal API probing, exec inside the pod/deployment and call localhost:
 
 ```bash
-export KUBECONFIG=/home/erix/.kube/config
-K=/home/erix/.local/bin/kubectl
+: "${KUBECONFIG:=$HOME/.kube/config}"
+export KUBECONFIG
+K="${K:-$(command -v kubectl)}"
 
 $K -n default exec deploy/subscription-tracker -- python - <<'PY'
 import json, urllib.request

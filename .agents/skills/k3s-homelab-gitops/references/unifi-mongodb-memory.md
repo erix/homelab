@@ -1,4 +1,4 @@
-# Unifi MongoDB memory cap in Erik's k3s homelab
+# Unifi MongoDB memory cap in this repository's k3s homelab
 
 Use this when k3s node memory is high and `kubectl top pods -A --sort-by=memory` shows `network/mongodb-0` consuming multiple GiB.
 
@@ -31,9 +31,10 @@ This MongoDB backs Unifi. MongoDB/WiredTiger will use large cache by default whe
 
 1. Confirm consumers:
    ```bash
-   export KUBECONFIG=/home/erix/.kube/config
-   K=/home/erix/.local/bin/kubectl
-   F=/home/erix/.local/bin/flux
+   : "${KUBECONFIG:=$HOME/.kube/config}"
+export KUBECONFIG
+   K="${K:-$(command -v kubectl)}"
+   F="${F:-$(command -v flux)}"
    $K top nodes
    $K top pods -A --sort-by=memory
    $K top pod -A --containers --sort-by=memory | head -40
@@ -48,8 +49,8 @@ This MongoDB backs Unifi. MongoDB/WiredTiger will use large cache by default whe
 
 3. Before restart, create a compressed mongodump archive without dumping contents into chat:
    ```bash
-   mkdir -p /home/erix/backups/unifi-mongo
-   backup=/home/erix/backups/unifi-mongo/unifi-mongo-pre-cache-cap-$(date -u +%Y%m%dT%H%M%SZ).archive.gz
+   mkdir -p $HOME/backups/unifi-mongo
+   backup=$HOME/backups/unifi-mongo/unifi-mongo-pre-cache-cap-$(date -u +%Y%m%dT%H%M%SZ).archive.gz
    $K -n network exec mongodb-0 -- mongodump --archive --gzip > "$backup"
    ls -lh "$backup"
    ```
@@ -72,7 +73,7 @@ This MongoDB backs Unifi. MongoDB/WiredTiger will use large cache by default whe
 
 5. Dry-run, commit, push, reconcile:
    ```bash
-   cd /home/erix/Projects/homelab
+   cd "$REPO_ROOT"
    $K apply --dry-run=client -k apps/unifi
    git add apps/unifi/mongo/mongo-deployment.yaml
    git commit -m "fix: cap Unifi MongoDB memory"
