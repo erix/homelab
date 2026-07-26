@@ -2,6 +2,8 @@
 
 A production-ready Kubernetes homelab running on Raspberry Pi cluster, featuring automated media management, home automation, and self-hosted services.
 
+Repository-local guidance for coding agents is available under [`.agents/skills/`](.agents/skills/README.md), including the k3s/Flux workflow and safe stateful-database rollout procedures.
+
 ![Kubernetes](https://img.shields.io/badge/kubernetes-326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![K3s](https://img.shields.io/badge/k3s-FFC61C?style=for-the-badge&logo=k3s&logoColor=black)
 ![Raspberry Pi](https://img.shields.io/badge/-RaspberryPi-C51A4A?style=for-the-badge&logo=Raspberry-Pi)

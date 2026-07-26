@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repository-local skills
+
+Reusable operational guidance lives under `.agents/skills/`. Before changing manifests or operating the cluster, read `.agents/skills/k3s-homelab-gitops/SKILL.md` and load only the linked reference files relevant to the task. For schema-changing stateful releases, also read `.agents/skills/stateful-database-gitops-rollouts/SKILL.md`.
+
 ## Repository Overview
 
 This is a K3s homelab repository containing Kubernetes manifests for various self-hosted applications including media servers, home automation, and supporting infrastructure services. The repository currently uses manual kubectl/helm deployments with infrastructure ready for GitOps migration.
