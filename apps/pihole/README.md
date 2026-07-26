@@ -8,7 +8,7 @@ Deployed via Helm chart `mojo2600/pihole`:
 
 ```bash
 helm repo add mojo2600 https://mojo2600.github.io/pihole-kubernetes/
-helm install pihole mojo2600/pihole -f values.yaml
+helm install pihole mojo2600/pihole --version 2.38.0 -f values.yaml
 ```
 
 ## Services
@@ -21,8 +21,12 @@ helm install pihole mojo2600/pihole -f values.yaml
 
 ## Components
 
-- **pihole**: Pi-hole DNS sinkhole (pihole/pihole:2024.02.0)
+- **pihole**: Pi-hole DNS sinkhole (`pihole/pihole:2026.07.2`, pinned by OCI digest)
 - **cloudflared**: DNS-over-HTTPS sidecar → Cloudflare 1.1.1.1
+
+The current Helm release uses chart `pihole-2.38.0`. The Deployment uses the
+`Recreate` strategy so two Pi-hole instances never write the same SQLite-backed
+configuration PVC during an upgrade.
 
 ## Ingress
 
