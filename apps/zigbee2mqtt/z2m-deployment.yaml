@@ -16,7 +16,7 @@ spec:
       # nodeSelector removed - new cluster has single node k3s-node-01
       containers:
       - name: z2m
-        image: koenkk/zigbee2mqtt:2.0.0 
+        image: koenkk/zigbee2mqtt:2.12.1@sha256:80f7f04f72a99e4c4ef51ef7e98ee736edba6db0ecbb7abc626d0c4b0f1871f1
         imagePullPolicy: IfNotPresent
         env:
           - name: TZ
