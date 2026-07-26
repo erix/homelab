@@ -58,7 +58,7 @@ Two scripts are provided for easy reapplication:
 #### 1. Apply Hard Anti-Affinity
 
 ```bash
-cd /Users/eriksimko/github/homelab/k3s/apps/longhorn
+cd infrastructure/longhorn
 ./apply-hard-antiaffinity.sh
 ```
 
@@ -70,7 +70,7 @@ This script:
 #### 2. Fix Deployment Strategy
 
 ```bash
-cd /Users/eriksimko/github/homelab/k3s/apps/longhorn
+cd infrastructure/longhorn
 ./fix-csi-deployment-strategy.sh
 ```
 
@@ -88,7 +88,7 @@ helm list -n longhorn-system
 kubectl get pods -n longhorn-system
 
 # 2. Navigate to Longhorn directory
-cd /Users/eriksimko/github/homelab/k3s/apps/longhorn
+cd infrastructure/longhorn
 
 # 3. Apply hard anti-affinity
 ./apply-hard-antiaffinity.sh
@@ -218,7 +218,7 @@ This is expected! Helm manages the deployments and will overwrite custom patches
 
 Run the post-upgrade procedure:
 ```bash
-cd /Users/eriksimko/github/homelab/k3s/apps/longhorn
+cd infrastructure/longhorn
 ./apply-hard-antiaffinity.sh
 ./fix-csi-deployment-strategy.sh
 ```

@@ -5,7 +5,7 @@
 Run one script to configure HA for all critical infrastructure:
 
 ```bash
-cd /Users/eriksimko/github/homelab/k3s/apps/infrastructure
+cd infrastructure
 ./apply-ha-configuration.sh
 ```
 
@@ -116,4 +116,4 @@ With 3 worker nodes:
 Check the detailed documentation:
 - **README.md** - Full HA configuration guide (this directory)
 - **longhorn/README.md** - Longhorn-specific details
-- **CLAUDE.md** - Overall homelab architecture (repository root)
+- **AGENTS.md** - Repository guidance and operational workflow

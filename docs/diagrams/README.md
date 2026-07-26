@@ -1,200 +1,60 @@
-# D2 Diagrams for K3s Homelab
+# K3s homelab diagrams
 
-Beautiful, modern architecture diagrams created with [D2](https://d2lang.com/) - a declarative diagramming language.
+The diagrams in this directory are generated from
+[D2](https://d2lang.com/) source files and document repository-declared
+architecture. They intentionally avoid live status, node uptime, dynamically
+allocated addresses, and other details that become stale quickly.
 
-## Files
+## Diagram set
 
-- `architecture.d2` - Main cluster architecture with nodes, namespaces, and infrastructure
-- `network-endpoints.d2` - Network endpoints, LoadBalancer IPs, and ingress routes
-- `tailscale-services.d2` - Tailscale-exposed services and secure remote access architecture
-- `storage-architecture.d2` - Longhorn distributed storage with 3-way replication
+| Source | Rendered asset | Scope |
+| --- | --- | --- |
+| `architecture.d2` | `architecture.png` | Flux reconciliation, workload groups, cluster platform, and hardware constraints |
+| `network-endpoints.d2` | `network-endpoints.png` | Ingress host groups, explicit LoadBalancer addresses, and external backends |
+| `storage-architecture.d2` | `storage-architecture.png` | Storage classes, static NFS, existing PVC references, and host-bound storage |
+| `tailscale-services.d2` | `tailscale-services.png` | Services explicitly annotated for Tailscale exposure |
 
-## Installation
+The manifests and `clusters/new/apps/kustomization.yaml` remain the source of
+truth. Verify the live system with Flux and `kubectl`.
 
-### macOS
-```bash
-brew install d2
-```
+## Render
 
-### Linux
-```bash
-curl -fsSL https://d2lang.com/install.sh | sh -s --
-```
-
-### Windows
-Download from https://github.com/terrastruct/d2/releases
-
-## Rendering Diagrams
-
-### Generate SVG (Recommended for GitHub)
-```bash
-# Architecture diagram
-d2 architecture.d2 architecture.svg
-
-# Network endpoints diagram
-d2 network-endpoints.d2 network-endpoints.svg
-```
-
-### Generate PNG
-```bash
-# Architecture diagram
-d2 architecture.d2 architecture.png
-
-# Network endpoints diagram
-d2 network-endpoints.d2 network-endpoints.png
-```
-
-### Generate with specific layout engine
-D2 supports multiple layout engines for different styles:
+Install D2, then run the script from anywhere in the repository:
 
 ```bash
-# dagre (default) - hierarchical
-d2 --layout dagre architecture.d2 architecture.svg
+# macOS
+brew install d2 librsvg
 
-# elk - good for large graphs
-d2 --layout elk architecture.d2 architecture.svg
-
-# tala (paid) - premium layout engine
-d2 --layout tala architecture.d2 architecture.svg
+# Render all PNG assets
+./docs/diagrams/render.sh
 ```
 
-### With themes
-D2 has several built-in themes:
+The script renders each source to SVG with D2 and converts it to PNG with
+`rsvg-convert`. This avoids D2's browser dependency for direct PNG output. It
+checks that both tools are available before changing generated assets.
+
+To render one diagram while editing:
 
 ```bash
-# Neutral theme (default)
-d2 --theme 0 architecture.d2 architecture.svg
+cd docs/diagrams
+d2 --watch --layout=dagre architecture.d2 architecture.svg
 
-# Neutral Grey
-d2 --theme 1 architecture.d2 architecture.svg
-
-# Dark theme
-d2 --theme 200 architecture.d2 architecture.svg
-
-# Terminal theme
-d2 --theme 300 architecture.d2 architecture.svg
+# After stopping watch mode:
+rsvg-convert --format=png --output=architecture.png architecture.svg
 ```
 
-## Quick Render Script
+Commit the `.d2` source and corresponding `.png` together.
 
-Save this as `render.sh` for easy rendering:
+## Maintenance checklist
 
-```bash
-#!/bin/bash
-# Render all D2 diagrams to SVG
+When changing the deployment model:
 
-echo "Rendering D2 diagrams..."
+1. Compare the diagram against `clusters/new/apps/kustomization.yaml`.
+2. Confirm namespaces, ingress hosts, service annotations, static IPs, storage
+   classes, NFS volumes, and host devices in the application manifests.
+3. Update the D2 source.
+4. Run `./docs/diagrams/render.sh`.
+5. Visually inspect every generated PNG.
 
-d2 architecture.d2 architecture.svg
-echo "✓ architecture.svg generated"
-
-d2 network-endpoints.d2 network-endpoints.svg
-echo "✓ network-endpoints.svg generated"
-
-d2 tailscale-services.d2 tailscale-services.svg
-echo "✓ tailscale-services.svg generated"
-
-d2 storage-architecture.d2 storage-architecture.svg
-echo "✓ storage-architecture.svg generated"
-
-echo "Done! All diagrams rendered to SVG."
-```
-
-Make it executable:
-```bash
-chmod +x render.sh
-./render.sh
-```
-
-## Live Preview While Editing
-
-D2 has a watch mode that auto-regenerates on file changes:
-
-```bash
-# Opens browser with live preview
-d2 --watch architecture.d2 architecture.svg
-```
-
-## VS Code Integration
-
-Install the D2 extension for syntax highlighting and preview:
-
-1. Open VS Code
-2. Go to Extensions (Cmd+Shift+X)
-3. Search for "D2"
-4. Install **D2 Language Support** by Terrastruct
-
-## Editing the Diagrams
-
-The D2 syntax is simple and readable:
-
-```d2
-# Nodes
-my_node: My Node Label
-
-# Styled nodes
-my_node: {
-  label: "My Node"
-  shape: rectangle
-  style.fill: "#bbdefb"
-  style.stroke: "#1565c0"
-}
-
-# Connections
-node1 -> node2: "Label"
-
-# Containers
-container: My Container {
-  child1: Child Node 1
-  child2: Child Node 2
-}
-```
-
-## Add to README
-
-After rendering, add the diagrams to your README:
-
-```markdown
-## Architecture
-
-![K3s Homelab Architecture](diagrams/architecture.svg)
-
-## Network Endpoints
-
-![Network Endpoints](diagrams/network-endpoints.svg)
-```
-
-## Why D2?
-
-✅ **Beautiful output** - Modern, professional-looking diagrams
-✅ **Code-based** - Version control friendly, easy to review changes
-✅ **Fast** - Quick rendering, watch mode for live preview
-✅ **Flexible** - Multiple themes and layout engines
-✅ **Open source** - Free and actively maintained
-✅ **Simple syntax** - Easy to learn and edit
-
-## Resources
-
-- Official Docs: https://d2lang.com/
-- Playground: https://play.d2lang.com/
-- Examples: https://d2lang.com/tour/intro
-- GitHub: https://github.com/terrastruct/d2
-
-## Troubleshooting
-
-**Command not found after install?**
-```bash
-# Make sure it's in your PATH
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-**SVG not rendering on GitHub?**
-- GitHub supports SVG, but make sure the file is committed
-- Try PNG if SVG has issues
-- Check file permissions
-
-**Want higher quality PNG?**
-```bash
-# Increase scale
-d2 --scale 2 architecture.d2 architecture.png
-```
+Do not add a runtime claim such as “running,” “healthy,” or “Ready” without
+checking the live cluster and dating the claim.

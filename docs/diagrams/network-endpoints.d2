@@ -1,236 +1,105 @@
 direction: down
 
-title: MetalLB LoadBalancer IP Pool: 192.168.11.200-250 {
+title: K3s Homelab — Network Paths {
   near: top-center
   shape: text
-  style: {
-    font-size: 22
-    bold: true
-  }
+  style.font-size: 24
+  style.bold: true
 }
 
-traefik: {
-  label: "Traefik Ingress\n192.168.11.200\nPorts 80/443"
+clients: Clients {
+  shape: cloud
+  style.fill: "#e3f2fd"
+  style.stroke: "#1565c0"
+}
+
+dns: "*.erix-homelab.site\nDNS + wildcard TLS" {
   shape: rectangle
+  style.fill: "#fff9c4"
+  style.stroke: "#f9a825"
+}
+
+traefik: "Traefik\nHTTP → HTTPS\nhost-based routing" {
+  shape: hexagon
   style.fill: "#bbdefb"
   style.stroke: "#1565c0"
-  style.font-size: 14
-  style.bold: true
   style.stroke-width: 3
 }
 
-ingress_routes: Ingress Routes {
+routes: Repository-declared Ingress Hosts {
   style.fill: "#e8f5e9"
   style.stroke: "#2e7d32"
 
-  route1: {
-    label: "hass.erix-homelab.site"
+  home: {
+    label: "Home automation\nhass • ha-config • z2m"
     shape: rectangle
     style.fill: "#c8e6c9"
-    style.stroke: "#388e3c"
-    style.font-size: 11
   }
 
-  route2: {
-    label: "z2m.erix-homelab.site"
+  media: {
+    label: "Media\ncalibre • books • books-automated\nrdt • plex • immich • meditations"
     shape: rectangle
     style.fill: "#c8e6c9"
-    style.stroke: "#388e3c"
-    style.font-size: 11
   }
 
-  route3: {
-    label: "overseer.erix-homelab.site"
+  stremio: {
+    label: "Stremio addons\naiometadata • aiostreams"
     shape: rectangle
     style.fill: "#c8e6c9"
-    style.stroke: "#388e3c"
-    style.font-size: 11
   }
 
-  route4: {
-    label: "grafana.erix-homelab.site"
+  tools: {
+    label: "Tools\nn8n • paste • trading • ibkr\nsubs • confidence • unifi"
     shape: rectangle
     style.fill: "#c8e6c9"
-    style.stroke: "#388e3c"
-    style.font-size: 11
   }
 
-  route5: {
-    label: "unifi.erix-homelab.site"
+  external_routes: {
+    label: "External backends\npaperless • jackettio • minio\nkaiburg • openclaw • proxmox"
     shape: rectangle
     style.fill: "#c8e6c9"
-    style.stroke: "#388e3c"
-    style.font-size: 11
   }
-
-  route6: {
-    label: "books.erix-homelab.site\npihole.erix-homelab.site\nlonghorn.erix-homelab.site"
-    shape: rectangle
-    style.fill: "#c8e6c9"
-    style.stroke: "#388e3c"
-    style.font-size: 11
-  }
-
-  route1 -> route2: {style.opacity: 0}
-  route2 -> route3: {style.opacity: 0}
-  route3 -> route4: {style.opacity: 0}
-  route4 -> route5: {style.opacity: 0}
-  route5 -> route6: {style.opacity: 0}
 }
 
-direct_lb: Direct LoadBalancer Services {
+lb: Direct LoadBalancer Services {
   style.fill: "#fff3e0"
   style.stroke: "#e65100"
 
-  column1: {
-    style.fill: "#fff8e1"
-    style.stroke: "#f57f17"
-
-    lb201: ".201 → Longhorn UI" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb202: ".202 → Overseerr" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb203: ".203 → MariaDB (port 3306)" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb204: ".204 → phpMyAdmin" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb205: ".205 → Unifi Controller" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb206: ".206 → Mosquitto MQTT" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb201 -> lb202: {style.opacity: 0}
-    lb202 -> lb203: {style.opacity: 0}
-    lb203 -> lb204: {style.opacity: 0}
-    lb204 -> lb205: {style.opacity: 0}
-    lb205 -> lb206: {style.opacity: 0}
+  fixed: {
+    label: "Manifest-pinned addresses\n.203 MariaDB • .205 UniFi\n.208 Calibre • .211 Calibre-Web Automated\n.225 Mail Relay • .230 MQTT"
+    shape: rectangle
+    style.fill: "#ffcc80"
   }
 
-  column2: {
-    style.fill: "#fff8e1"
-    style.stroke: "#f57f17"
-
-    lb208: ".208 → Zurg (Real-Debrid)" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb209: ".209 → Calibre" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb210: ".210 → Calibre-Web" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb211: ".211 → Calibre-Web Automated" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb212: ".212 → Home Assistant" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb213: ".213 → Zigbee2MQTT" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-
-    lb208 -> lb209: {style.opacity: 0}
-    lb209 -> lb210: {style.opacity: 0}
-    lb210 -> lb211: {style.opacity: 0}
-    lb211 -> lb212: {style.opacity: 0}
-    lb212 -> lb213: {style.opacity: 0}
+  allocated: {
+    label: "Pool-allocated addresses\nHome Assistant • Zigbee2MQTT • Calibre-Web\nIB Gateway • IBeam"
+    shape: rectangle
+    style.fill: "#ffe0b2"
   }
-
-  column3: {
-    style.fill: "#fff8e1"
-    style.stroke: "#f57f17"
-
-    lb222: ".222 → Pi-hole DNS" {
-      shape: rectangle
-      style.fill: "#ffecb3"
-      style.stroke: "#ff8f00"
-      style.font-size: 11
-    }
-  }
-
-  column1 -> column2: {style.opacity: 0}
-  column2 -> column3: {style.opacity: 0}
 }
 
-# Connections
-traefik -> ingress_routes.route1: {
-  style.stroke-width: 2
-  style.stroke: "#1976d2"
+external: External LAN Backends {
+  style.fill: "#f3e5f5"
+  style.stroke: "#7b1fa2"
+
+  truenas: "TrueNAS services\nPaperless • Jackettio • MinIO"
+  kaiburg: "Kaiburg services\nKaiburg • OpenClaw"
+  proxmox: "Proxmox API/UI"
 }
 
-traefik -> ingress_routes.route2: {
-  style.stroke-width: 2
-  style.stroke: "#1976d2"
-}
+clients -> dns: resolve
+dns -> traefik: HTTPS
+traefik -> routes.home
+traefik -> routes.media
+traefik -> routes.stremio
+traefik -> routes.tools
+traefik -> routes.external_routes
+clients -> lb.fixed: LAN protocols
+clients -> lb.allocated: LAN protocols
+routes.external_routes -> external: Service + Endpoints
 
-traefik -> ingress_routes.route3: {
-  style.stroke-width: 2
-  style.stroke: "#1976d2"
-}
-
-traefik -> ingress_routes.route4: {
-  style.stroke-width: 2
-  style.stroke: "#1976d2"
-}
-
-traefik -> ingress_routes.route5: {
-  style.stroke-width: 2
-  style.stroke: "#1976d2"
-}
-
-traefik -> ingress_routes.route6: {
-  style.stroke-width: 2
-  style.stroke: "#1976d2"
+note: "Only explicit static IPs are shown.\nPool-allocated addresses must be read from the live cluster." {
+  shape: text
+  style.italic: true
+  style.font-size: 12
 }
