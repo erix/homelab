@@ -13,8 +13,8 @@ A Stremio super-addon that consolidates multiple addons and debrid services into
 
 ## Deployment Information
 
-- **Image**: `ghcr.io/viren070/aiostreams:v2.30.6`
-- **Updates**: Flux automatically applies patch releases in the `v2.30.x` line; minor and major upgrades require a policy change.
+- **Image**: `ghcr.io/viren070/aiostreams:v2.31.1@sha256:26d93653c3a5d0835db9189d6aca21d05614e68107c4d4a3ec7196b60c88c3bc`
+- **Updates**: Flux monitors patch releases in the `v2.31.x` line. Rollouts are manual so the image remains pinned to an immutable digest; minor and major upgrades require policy review.
 - **Port**: 3000
 - **URL**: https://aiostreams.erix-homelab.site
 - **Storage**: 5Gi for configuration and cache data

@@ -19,13 +19,27 @@ spec:
     spec:
       containers:
       - name: aiostreams
-        image: ghcr.io/viren070/aiostreams:v2.30.6 # {"$imagepolicy":"flux-system:aiostreams"}
+        image: ghcr.io/viren070/aiostreams:v2.31.1@sha256:26d93653c3a5d0835db9189d6aca21d05614e68107c4d4a3ec7196b60c88c3bc
         ports:
         - containerPort: 3000
           name: http
         envFrom:
         - secretRef:
             name: aiostreams-secret
+        env:
+        # Reuse the already validated metadata credentials without copying or
+        # exposing their values. TMDB is intentionally omitted because the
+        # existing key currently fails upstream validation.
+        - name: TVDB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: TVDB_API_KEY
+        - name: TRAKT_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: TRAKT_CLIENT_ID
         volumeMounts:
         - name: data
           mountPath: /app/data
