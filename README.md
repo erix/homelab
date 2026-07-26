@@ -91,25 +91,25 @@ to open it at full resolution.
 
 ### Cluster architecture
 
-[![K3s homelab declared architecture](docs/diagrams/architecture.png)](docs/diagrams/architecture.png)
+[![K3s homelab declared architecture](docs/diagrams/architecture.png?v=21c0a0b2983f)](docs/diagrams/architecture.png)
 
 Source: [`architecture.d2`](docs/diagrams/architecture.d2)
 
 ### Network paths
 
-[![K3s homelab network paths](docs/diagrams/network-endpoints.png)](docs/diagrams/network-endpoints.png)
+[![K3s homelab network paths](docs/diagrams/network-endpoints.png?v=12f65a15e1a5)](docs/diagrams/network-endpoints.png)
 
 Source: [`network-endpoints.d2`](docs/diagrams/network-endpoints.d2)
 
 ### Storage backends
 
-[![K3s homelab storage backends](docs/diagrams/storage-architecture.png)](docs/diagrams/storage-architecture.png)
+[![K3s homelab storage backends](docs/diagrams/storage-architecture.png?v=dbc2a7e00056)](docs/diagrams/storage-architecture.png)
 
 Source: [`storage-architecture.d2`](docs/diagrams/storage-architecture.d2)
 
 ### Tailscale services
 
-[![Tailscale-exposed Kubernetes services](docs/diagrams/tailscale-services.png)](docs/diagrams/tailscale-services.png)
+[![Tailscale-exposed Kubernetes services](docs/diagrams/tailscale-services.png?v=2322a915e7ee)](docs/diagrams/tailscale-services.png)
 
 Source: [`tailscale-services.d2`](docs/diagrams/tailscale-services.d2)
 
