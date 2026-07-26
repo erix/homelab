@@ -84,7 +84,7 @@ kubectl get l2advertisements -n metallb-system
 ### Collecting Diagnostics
 Use the MetalLB troubleshooting script:
 ```bash
-/Users/eriksimko/github/homelab/k3s/metallb_logs.sh
+./infrastructure/metallb_logs.sh
 ```
 
 This creates `metallb_report.tgz` with comprehensive logs and configuration.
@@ -101,4 +101,4 @@ This creates `metallb_report.tgz` with comprehensive logs and configuration.
 - [MetalLB Official Documentation](https://metallb.universe.tf/)
 - [MetalLB Helm Chart](https://github.com/metallb/metallb/tree/main/charts/metallb)
 - Values file: `metallb/values.yaml`
-- Diagnostic script: `/Users/eriksimko/github/homelab/k3s/metallb_logs.sh`
+- Diagnostic script: `infrastructure/metallb_logs.sh`

@@ -141,21 +141,15 @@ kubectl patch deployment <name> -n <namespace> --type='json' -p='[
 ]'
 ```
 
-### Option B: Update YAML Manifests
-Edit deployment YAML files and add topology spread constraints, then:
-```bash
-kubectl apply -f <deployment>.yaml
-```
+### Option B: Update Git-managed YAML manifests
 
-### Option C: Use Helm Chart Template
-If using homelab-app chart, add topology spread to default values:
-```yaml
-# helm/homelab-app/values.yaml
-topologySpreadConstraints:
-  enabled: true
-  maxSkew: 1
-  whenUnsatisfiable: ScheduleAnyway
-```
+For a durable change, add the topology spread constraint to the workload
+manifest referenced by its Flux `Kustomization`, commit it, and let Flux
+reconcile the change. A direct patch is temporary because Flux may restore the
+Git-declared pod template.
+
+See [deployment.md](deployment.md) for the current deployment and validation
+workflow.
 
 ## Rebalancing After Implementation
 

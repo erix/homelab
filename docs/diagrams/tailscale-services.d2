@@ -1,162 +1,74 @@
 direction: down
 
-title: Tailscale-Exposed K8s Services {
+title: Tailscale-Exposed Kubernetes Services {
   near: top-center
   shape: text
   style.font-size: 24
   style.bold: true
 }
 
-# External Clients
-clients: External Access {
+clients: Tailnet Clients {
   style.fill: "#e3f2fd"
-  style.stroke: "#1976d2"
-  
-  laptop: Laptop {
-    shape: rectangle
-    style.fill: "#bbdefb"
-  }
-  
-  phone: Phone {
-    shape: rectangle
-    style.fill: "#bbdefb"
-  }
-  
-  tradelens: TradeLens\n(Railway) {
-    shape: cloud
-    style.fill: "#4285f4"
-  }
+  style.stroke: "#1565c0"
+
+  laptop: Laptop
+  phone: Phone
+  automation: Remote automation
 }
 
-# Tailscale Network
-tailnet: Tailscale Network\n(WireGuard-encrypted mesh) {
-  shape: rectangle
+tailnet: "Tailscale Tailnet\nWireGuard-encrypted mesh" {
+  shape: cloud
   style.fill: "#fce4ec"
   style.stroke: "#c2185b"
-  style.border-radius: 8
   style.stroke-width: 3
-  
-  ts_note: "Zero-trust • MagicDNS • End-to-end encrypted" {
-    shape: text
-    style.font-size: 12
-    style.italic: true
-  }
 }
 
-# K8s Cluster with Tailscale Operator
-k8s: K8s Homelab Cluster {
+cluster: K3s Cluster {
   style.fill: "#e8f5e9"
-  style.stroke: "#388e3c"
-  style.border-radius: 8
-  
-  ts_operator: Tailscale Operator {
-    shape: hexagon
-    style.fill: "#f8bbd0"
-    style.stroke: "#c2185b"
-  }
-  
-  # Exposed Services
-  services: Exposed Services {
+  style.stroke: "#2e7d32"
+
+  operator: "Tailscale Operator\nHelm-managed"
+
+  annotated: Manifest-Annotated Services {
     style.fill: "#fff3e0"
-    style.stroke: "#f57c00"
-    
-    ib_gateway: IB Gateway\nib-gateway.tailnet.ts.net\n:4001 (paper trading) {
+    style.stroke: "#ef6c00"
+
+    gateway: {
+      label: "IB Gateway\n4001 paper API\n4002 live API • 5900 VNC"
       shape: rectangle
-      style.fill: "#b39ddb"
-      style.stroke: "#5e35b1"
+      style.fill: "#d1c4e9"
     }
-    
-    rancher: Rancher\nrancher.tailnet.ts.net\n(K8s management) {
+
+    ibeam: {
+      label: "IBeam\n5000 REST API"
       shape: rectangle
-      style.fill: "#80deea"
-      style.stroke: "#00838f"
-    }
-    
-    longhorn: Longhorn UI\nlonghorn.tailnet.ts.net\n(storage mgmt) {
-      shape: rectangle
-      style.fill: "#ffab91"
-      style.stroke: "#d84315"
-    }
-    
-    grafana: Grafana\ngrafana.tailnet.ts.net\n(monitoring) {
-      shape: rectangle
-      style.fill: "#f48fb1"
-      style.stroke: "#c2185b"
+      style.fill: "#d1c4e9"
     }
   }
-  
-  # LoadBalancer Layer
-  metallb: MetalLB\nLoadBalancer Pool\n192.168.11.200-250 {
-    shape: hexagon
-    style.fill: "#c5e1a5"
-    style.stroke: "#558b2f"
-  }
-  
-  # Internal Services
-  internal: Internal Cluster Services {
-    style.fill: "#fff9c4"
-    style.stroke: "#f9a825"
-    
-    ha: Home Assistant\n192.168.11.212 {
-      shape: rectangle
-      style.fill: "#81c784"
-    }
-    
-    pihole: Pi-hole\n192.168.11.222 {
-      shape: rectangle
-      style.fill: "#64b5f6"
-    }
-    
-    unifi: Unifi\n192.168.11.205 {
-      shape: rectangle
-      style.fill: "#4db6ac"
-    }
+
+  lan: {
+    label: "MetalLB / LAN access\nremains separate from Tailnet routing"
+    shape: rectangle
+    style.fill: "#c8e6c9"
   }
 }
 
-# External Service
-ibkr_cloud: Interactive Brokers\nAPI Gateway {
-  shape: cloud
-  style.fill: "#d1c4e9"
-  style.stroke: "#673ab7"
+upstream: External APIs {
+  style.fill: "#eceff1"
+  style.stroke: "#546e7a"
+
+  ibkr: "Interactive Brokers"
 }
 
-# Connections
-clients.laptop -> tailnet: Tailscale client
-clients.phone -> tailnet: Tailscale app
-clients.tradelens -> tailnet: Tailscale\nsubnet router
+clients -> tailnet: authenticated access
+tailnet -> cluster.operator: operator-managed proxy
+cluster.operator -> cluster.annotated.gateway: tailscale.com/expose
+cluster.operator -> cluster.annotated.ibeam: tailscale.com/expose
+cluster.annotated.gateway -> upstream.ibkr
+cluster.annotated.ibeam -> upstream.ibkr
 
-tailnet -> k8s.ts_operator: MagicDNS\nrouting
-
-k8s.ts_operator -> k8s.services.ib_gateway: Expose
-k8s.ts_operator -> k8s.services.rancher: Expose
-k8s.ts_operator -> k8s.services.longhorn: Expose
-k8s.ts_operator -> k8s.services.grafana: Expose
-
-k8s.services -> k8s.metallb: Load balance
-
-k8s.services.ib_gateway -> ibkr_cloud: API calls
-
-# Benefits
-benefits: Security Benefits {
-  style.fill: "#fffde7"
-  style.stroke: "#f57f17"
-  style.border-radius: 8
-  
-  list: "✓ No firewall port forwarding\n✓ No public IP exposure\n✓ Zero-trust authentication\n✓ End-to-end encryption\n✓ No VPN complexity\n✓ Automatic HTTPS/TLS\n✓ MagicDNS (no IP management)" {
-    shape: text
-    style.font-size: 12
-  }
-}
-
-# Use Cases
-usecases: Use Cases {
-  style.fill: "#e8eaf6"
-  style.stroke: "#3f51b5"
-  style.border-radius: 8
-  
-  list: "🏦 TradeLens remote trading access\n🖥️ Cluster management from anywhere\n📊 Monitoring dashboards on-the-go\n💾 Storage health checks" {
-    shape: text
-    style.font-size: 12
-  }
+note: "The repository currently annotates IB Gateway and IBeam.\nTailnet DNS names and live proxy status are operator-assigned." {
+  shape: text
+  style.italic: true
+  style.font-size: 12
 }

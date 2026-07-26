@@ -1,26 +1,28 @@
-#!/bin/bash
-# Render all D2 diagrams to SVG
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
-echo "Rendering D2 diagrams..."
-echo
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-d2 architecture.d2 architecture.svg
-echo "✓ architecture.svg generated"
+if ! command -v d2 >/dev/null 2>&1; then
+  echo "error: d2 is required (https://d2lang.com)" >&2
+  exit 1
+fi
 
-d2 network-endpoints.d2 network-endpoints.svg
-echo "✓ network-endpoints.svg generated"
+if ! command -v rsvg-convert >/dev/null 2>&1; then
+  echo "error: rsvg-convert is required to generate PNG assets" >&2
+  exit 1
+fi
 
-d2 tailscale-services.d2 tailscale-services.svg
-echo "✓ tailscale-services.svg generated"
+render_tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/homelab-d2.XXXXXX")"
+trap 'rm -rf "$render_tmp_dir"' EXIT
 
-d2 storage-architecture.d2 storage-architecture.svg
-echo "✓ storage-architecture.svg generated"
+for source in architecture network-endpoints storage-architecture tailscale-services; do
+  echo "Rendering ${source}.d2"
+  svg_path="${render_tmp_dir}/${source}.svg"
+  d2 --layout=dagre --theme=0 --pad=40 "${source}.d2" "$svg_path"
+  rsvg-convert --format=png --output="${source}.png" "$svg_path"
+done
 
-echo
-echo "Done! All diagrams rendered to SVG."
-echo
-echo "These diagrams are used in:"
-echo "  - ../../README.md (main homelab README)"
-echo "  - ../../apps/ib-gateway/README.md (IB Gateway)"
+echo "Rendered all diagrams to ${SCRIPT_DIR}"

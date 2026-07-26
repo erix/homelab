@@ -112,7 +112,7 @@ With `Recreate`:
 Apply HA configuration to all components:
 
 ```bash
-cd /Users/eriksimko/github/homelab/k3s/apps/infrastructure
+cd infrastructure
 ./apply-ha-configuration.sh
 ```
 
@@ -139,7 +139,7 @@ After upgrading any of the following via Helm, re-run the HA script:
 ```bash
 # Example: After Longhorn upgrade
 helm upgrade longhorn longhorn/longhorn -n longhorn-system
-cd /Users/eriksimko/github/homelab/k3s/apps/infrastructure
+cd infrastructure
 ./apply-ha-configuration.sh
 ```
 
@@ -319,7 +319,7 @@ This is expected! Helm manages deployments and overwrites patches.
 
 Always re-run after Helm upgrades:
 ```bash
-cd /Users/eriksimko/github/homelab/k3s/apps/infrastructure
+cd infrastructure
 ./apply-ha-configuration.sh
 ```
 
@@ -346,7 +346,7 @@ This alert helped identify the need for this HA configuration!
 ### Automate Post-Helm-Upgrade Configuration
 
 Option 1: Create Helm post-upgrade hooks
-Option 2: Use ArgoCD with custom health checks
+Option 2: Represent the settings in Flux-managed manifests with health checks
 Option 3: Create a cronjob that periodically checks and applies HA config
 
 ### Consider Horizontal Pod Autoscaler (HPA)
@@ -365,7 +365,8 @@ homelab-04 is labeled `node-role=database`. Consider adding node affinity to dat
 
 ### Longhorn CSI Controllers
 
-See `/Users/eriksimko/github/homelab/k3s/apps/longhorn/README.md` for detailed Longhorn-specific documentation.
+See [longhorn/README.md](longhorn/README.md) for detailed
+Longhorn-specific documentation.
 
 ### cert-manager
 
@@ -391,7 +392,8 @@ StatefulSets (Prometheus, Alertmanager) remain at 1 replica. The **operator** de
 
 The Tailscale Kubernetes Operator provides secure, zero-trust network access to your cluster services from anywhere, without exposing them to the public internet. Services are accessible through your private Tailscale network (Tailnet) with end-to-end encryption.
 
-**Status**: ✅ Deployed and operational
+**Repository state**: Operator configuration and a sealed OAuth secret are
+present. Verify live status with `kubectl get pods -n tailscale`.
 
 ### What is Tailscale?
 
@@ -399,18 +401,19 @@ Tailscale creates a secure mesh VPN using WireGuard. The Kubernetes operator all
 
 ### Installation
 
-The Tailscale operator is fully configured and running. See `/Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale/` for configuration files.
+See `infrastructure/tailscale/` for the operator's configuration files.
 
-**Components deployed:**
+**Components represented in the configuration:**
 - Tailscale Operator (manages service exposure)
 - OAuth authentication (sealed secret)
 - Custom Resource Definitions (CRDs) for advanced features
 - RBAC permissions
 
-**Requirements met:**
-- ✅ Tailscale OAuth client configured with required scopes (`devices:write`, `auth_keys:write`)
-- ✅ Tailscale ACL configured with `tag:k8s-operator` and `tag:k8s` owned by `autogroup:admin`
-- ✅ Sealed secret for OAuth credentials
+**Requirements:**
+
+- A Tailscale OAuth client with the scopes required by the chart
+- ACL ownership for the operator and workload tags
+- The committed Sealed Secret for OAuth credentials
 
 ### Exposing Services
 
@@ -614,7 +617,7 @@ Your current ACL includes these tags for Kubernetes services:
 If you reinstall or update the Tailscale operator:
 
 ```bash
-cd /Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale
+cd infrastructure/tailscale
 
 # Reapply sealed OAuth secret
 kubectl apply -f operator-oauth-sealed.yaml
@@ -626,10 +629,11 @@ kubectl rollout restart deployment/operator -n tailscale
 #### Updating OAuth Credentials
 
 1. Generate new OAuth client in Tailscale admin console
-2. Update `/Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale/operator-secret.yaml` with new credentials
+2. Update the local, unsealed `infrastructure/tailscale/operator-secret.yaml`
+   with new credentials
 3. Seal the secret:
    ```bash
-   cd /Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale
+   cd infrastructure/tailscale
    kubeseal -f operator-secret.yaml -w operator-oauth-sealed.yaml
    ```
 4. Apply and restart:
@@ -651,14 +655,15 @@ See official Tailscale documentation for details: https://tailscale.com/kb/1236/
 
 ### Files in Tailscale Directory
 
-- `/Users/eriksimko/github/homelab/k3s/apps/infrastructure/tailscale/`
-  - `namespace.yaml` - Tailscale namespace
-  - `operator-rbac.yaml` - RBAC permissions (managed by official manifest)
-  - `operator-deployment.yaml` - Operator deployment (managed by official manifest)
-  - `operator-secret.yaml` - Plaintext OAuth secret template (DO NOT COMMIT)
-  - `operator-oauth-sealed.yaml` - Sealed OAuth secret (safe to commit)
-  - `ib-gateway-service-patch.yaml` - Example service with Tailscale annotation
+- `infrastructure/tailscale/`
   - `README.md` - Detailed setup guide
+  - `install.sh` - Helm installation and upgrade workflow
+  - `values.yaml` - Helm values
+  - `operator-oauth-sealed.yaml` - Committed Sealed Secret
+  - `ib-gateway-service-patch.yaml` - Example service annotation patch
+
+An ignored `operator-secret.yaml` may be created temporarily when rotating the
+OAuth credentials. Never commit it.
 
 ### References
 
