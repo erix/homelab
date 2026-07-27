@@ -1,0 +1,28 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-calibre-inbox
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 192.168.1.179
+  share: /mnt/tank/books
+  subDir: Book_Inbox
+  mountPermissions: "0775"
+  onDelete: retain
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+mountOptions:
+  - nfsvers=4.1
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: calibre-inbox-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: nfs-calibre-inbox

@@ -55,7 +55,7 @@ spec:
           claimName: pvc-books-nfs
       - name: ingest
         persistentVolumeClaim:
-          claimName: calibre-ingest-pvc
+          claimName: calibre-inbox-pvc
 ---
 apiVersion: v1
 kind: Service

@@ -70,7 +70,8 @@ If you want to migrate settings from the existing Calibre-Web:
 
 - **Calibre Library**: `/calibre-library` (shared NFS volume `pvc-books-nfs`)
 - **CWA Config**: `/config` (new PVC `calibre-web-automated-pvc`)
-- **Auto-Ingest**: `/cwa-book-ingest` (new PVC `calibre-ingest-pvc`)
+- **Auto-Ingest**: `/cwa-book-ingest` (TrueNAS-backed PVC `calibre-inbox-pvc`)
+- **Network Inbox**: `Book_Inbox` under the TrueNAS books dataset
 
 ## Access Points
 
@@ -81,7 +82,7 @@ If you want to migrate settings from the existing Calibre-Web:
 ## Automation Features
 
 ### Auto-Import
-- Drop any supported book format in `/cwa-book-ingest`
+- Drop any supported book format in the `Book_Inbox` network folder or `/cwa-book-ingest`
 - Automatic detection and processing
 - Conversion to EPUB for optimal compatibility
 - Metadata enhancement and organization
