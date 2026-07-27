@@ -44,7 +44,7 @@ spec:
           mountPath: /config
         - name: books
           mountPath: /calibre-library
-        - name: ingest
+        - name: books
           mountPath: /cwa-book-ingest
           subPath: Book_Inbox
       volumes:
@@ -52,9 +52,6 @@ spec:
         persistentVolumeClaim:
           claimName: calibre-web-automated-pvc
       - name: books 
-        persistentVolumeClaim:
-          claimName: pvc-books-nfs
-      - name: ingest
         persistentVolumeClaim:
           claimName: pvc-books-nfs
 ---
