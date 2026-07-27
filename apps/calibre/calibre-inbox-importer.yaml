@@ -42,10 +42,21 @@ data:
         continue
       fi
 
-      claim_file="${processing_path}/$(date +%s)-${RANDOM}-${filename}"
+      claim_directory="${processing_path}/$(date +%s)-${RANDOM}"
+      claim_file="${claim_directory}/${filename}"
+      mkdir -p "${claim_directory}"
       if ! mv -- "${source_file}" "${claim_file}"; then
+        rmdir "${claim_directory}"
         echo "Could not claim file, leaving it for the next run: ${filename}" >&2
         failed=$((failed + 1))
+        continue
+      fi
+
+      if [[ ! -s "${claim_file}" ]]; then
+        mv -- "${claim_file}" "${failed_path}/$(date +%s)-${filename}"
+        rmdir "${claim_directory}"
+        failed=$((failed + 1))
+        echo "Import failed because the file is empty: ${filename}" >&2
         continue
       fi
 
@@ -57,10 +68,12 @@ data:
         archive_directory="${imported_path}/$(date +%F)"
         mkdir -p "${archive_directory}"
         mv -- "${claim_file}" "${archive_directory}/${filename}"
+        rmdir "${claim_directory}"
         imported=$((imported + 1))
         echo "Imported: ${filename}"
       else
-        mv -- "${claim_file}" "${failed_path}/${filename}"
+        mv -- "${claim_file}" "${failed_path}/$(date +%s)-${filename}"
+        rmdir "${claim_directory}"
         failed=$((failed + 1))
         echo "Import failed: ${filename}" >&2
       fi
