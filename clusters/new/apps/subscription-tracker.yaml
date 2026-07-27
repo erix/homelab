@@ -15,7 +15,7 @@ spec:
     - name: ghcr.io/erix/subscription-tracker
       newTag: main-9-sha-d57fbd2 # {"$imagepolicy":"flux-system:subscription-tracker:tag"}
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: subscription-tracker
@@ -26,7 +26,7 @@ spec:
   secretRef:
     name: ghcr-credentials
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
   name: subscription-tracker
@@ -41,7 +41,7 @@ spec:
     numerical:
       order: asc
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:
   name: subscription-tracker
