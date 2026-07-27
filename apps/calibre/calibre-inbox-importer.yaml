@@ -1,0 +1,145 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: calibre-inbox-importer
+data:
+  import.sh: |
+    #!/usr/bin/env bash
+    set -Eeuo pipefail
+
+    readonly library_path="/library"
+    readonly inbox_path="/inbox"
+    readonly processing_path="${inbox_path}/.processing"
+    readonly imported_path="${inbox_path}/.imported"
+    readonly failed_path="${inbox_path}/.failed"
+    readonly minimum_age_seconds=120
+
+    mkdir -p "${processing_path}" "${imported_path}" "${failed_path}"
+
+    now="$(date +%s)"
+    imported=0
+    failed=0
+    skipped=0
+
+    while IFS= read -r -d '' source_file; do
+      filename="$(basename "${source_file}")"
+      lowercase_filename="${filename,,}"
+
+      case "${lowercase_filename}" in
+        *.epub|*.pdf|*.mobi|*.azw|*.azw3|*.cbz|*.cbr|*.fb2|*.djvu|*.docx|*.odt|*.rtf|*.txt)
+          ;;
+        *)
+          echo "Skipping unsupported file: ${filename}"
+          skipped=$((skipped + 1))
+          continue
+          ;;
+      esac
+
+      modified_at="$(stat -c %Y "${source_file}")"
+      if (( now - modified_at < minimum_age_seconds )); then
+        echo "Waiting for upload to settle: ${filename}"
+        skipped=$((skipped + 1))
+        continue
+      fi
+
+      claim_file="${processing_path}/$(date +%s)-${RANDOM}-${filename}"
+      if ! mv -- "${source_file}" "${claim_file}"; then
+        echo "Could not claim file, leaving it for the next run: ${filename}" >&2
+        failed=$((failed + 1))
+        continue
+      fi
+
+      echo "Importing: ${filename}"
+      if calibredb add \
+        --with-library "${library_path}" \
+        --automerge ignore \
+        "${claim_file}"; then
+        archive_directory="${imported_path}/$(date +%F)"
+        mkdir -p "${archive_directory}"
+        mv -- "${claim_file}" "${archive_directory}/${filename}"
+        imported=$((imported + 1))
+        echo "Imported: ${filename}"
+      else
+        mv -- "${claim_file}" "${failed_path}/${filename}"
+        failed=$((failed + 1))
+        echo "Import failed: ${filename}" >&2
+      fi
+    done < <(find "${inbox_path}" -maxdepth 1 -type f -print0)
+
+    echo "Import run complete: imported=${imported} failed=${failed} skipped=${skipped}"
+    (( failed == 0 ))
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: calibre-inbox-importer
+  labels:
+    app: calibre-inbox-importer
+spec:
+  schedule: "*/2 * * * *"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 60
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: calibre-inbox-importer
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 3001
+            fsGroup: 3001
+          affinity:
+            nodeAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  preference:
+                    matchExpressions:
+                      - key: kubernetes.io/hostname
+                        operator: In
+                        values:
+                          - homelab-04
+          containers:
+            - name: importer
+              image: linuxserver/calibre:7.23.0
+              imagePullPolicy: IfNotPresent
+              command:
+                - /usr/bin/env
+                - bash
+                - /scripts/import.sh
+              env:
+                - name: HOME
+                  value: /tmp
+                - name: TZ
+                  value: Europe/Berlin
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 128Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+              volumeMounts:
+                - name: books
+                  mountPath: /library
+                - name: books
+                  mountPath: /inbox
+                  subPath: Book_Inbox
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: books
+              persistentVolumeClaim:
+                claimName: pvc-books-nfs
+            - name: scripts
+              configMap:
+                name: calibre-inbox-importer
+                defaultMode: 0555
