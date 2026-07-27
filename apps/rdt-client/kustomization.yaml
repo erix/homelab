@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - pvc.yaml
+  - filebot-trigger-script.yaml
+  - rdt-filebot-integrations-sealed.yaml
   - rdt-deployment.yaml
   - rdt-service.yaml
   - rdt-ingress.yaml

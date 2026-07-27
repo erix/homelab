@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: rdt-filebot-integrations
+  namespace: rdt-client
+spec:
+  encryptedData:
+    PLEX_TOKEN: AgBDuO13yEadTjXg+0vSk5CY8g3/R72IKaO3QWZtd5JSeSfesRwRmgK0E2XOzW/HhDEjqB44buawunEONAq5F3QSsRFJPg13Obq4CajXObtLfQhMx8ZqbXZ5SwN3Iqcb6xbUszCv/eBvT92uv9lyykiVzHAoY6BM8ztj96s0ypp9ricomflzRbHaJyJn8T2vKyenB+v9c0T9R9gncc1KMJ0kl33H1p2WYzyYQg2F6OuNFAICW3uek4EyUv4IgjX/qXsP1c7mHFCHk/wYwzg+TwPvQ0IhKxaFDDJGvw2GQbi9N8QT3YsssfpM/zKbblaCZFSWB590LBBPNft62/exUABR01yDQeGVkekEAmyk3GntBHwIeErFL8IWoF6QodK3ouhqDzfUFIJHScy1DCzeKLwnNrsE/FS85S24Y/FRtsexviMmgJxJiyxJkfH9pV82hQd28ThiYzKr8t3bHoSpAALUxGcrbD84h5pkPv9t7D8MjB03VCw5MpXnLKCVbJvJ4uTZrG+A4TSPpx0pNo8s5qGVg+e1YIMjo2OTN7C49Xaaug0U7rw1FCUDbq3PC5Jcv+IUpxGl9xcQMBKcXXT/kIxMjpBVS06vypyDQm3BMgDw2wKH9iUmlwECvlzk0606vJ/aMI5knXPkXr7MBq7/lfQxzyEjxqD4ueoPu9aTddl/fXV+IUK+asLxpiTKf5v0RljDLNnjqvWMmWr9qMt+424ijaz2Bw==
+  template:
+    metadata:
+      name: rdt-filebot-integrations
+      namespace: rdt-client
