@@ -39,6 +39,8 @@ spec:
           value: "1000"
         - name: TZ 
           value: "Europe/Berlin"
+        - name: NETWORK_SHARE_MODE
+          value: "true"
         volumeMounts:
         - name: calibre-web-automated-config
           mountPath: /config
