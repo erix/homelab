@@ -49,7 +49,7 @@ spec:
       # Stay on Immich v3; major upgrades require migration review.
       range: ">=3.0.0 <4.0.0"
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta1
+apiVersion: image.toolkit.fluxcd.io/v1beta2
 kind: ImageUpdateAutomation
 metadata:
   name: immich
