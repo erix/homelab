@@ -70,10 +70,15 @@ spec:
           value: "{ plex.id % \" [\" % {edition} % \", \" % {vf} % \", \" % {hdr} %\"]\" }"
         - name: AMC_SERIES_FORMAT
           value: "{ plex.id % \" [\" % {edition} % \", \" % {vf} % \", \" % {hdr} %\"]\" }"
+        - name: PLEX_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: rdt-filebot-integrations
+              key: PLEX_TOKEN
         - name: AMC_CUSTOM_OPTIONS
           value: >-
             --def excludeList=/media/.excludes
-            --def plex=plex.erix-homelab.site:X2f_ydkvwuJFpyy14-KU
+            --def plex=plex.erix-homelab.site:$(PLEX_TOKEN)
             --def discord=https://discord.com/api/webhooks/1238780467562545153/qIfbeRMkuBynXeZlvKVdDBmGw413ELZ2DjlNNbhKzSTMFNbShtUEX5CfLylt-PwIMu2f
         volumeMounts:
         - mountPath: /downloads
@@ -91,6 +96,11 @@ spec:
           value: "911"
         - name: GROUP_ID
           value: "911"
+        - name: PLEX_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: rdt-filebot-integrations
+              key: PLEX_TOKEN
         volumeMounts:
         - mountPath: /downloads
           name: rdt-downloads
