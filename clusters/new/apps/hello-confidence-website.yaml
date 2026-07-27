@@ -15,7 +15,7 @@ spec:
     - name: ghcr.io/fuloptimea-rgb/hello-confidence-website
       newTag: main-61-sha-5c7844cf23504f51510a11d983e580d366b46cbb # {"$imagepolicy":"flux-system:hello-confidence-website:tag"}
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: hello-confidence-website
@@ -26,7 +26,7 @@ spec:
   secretRef:
     name: ghcr-credentials
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
   name: hello-confidence-website
@@ -41,7 +41,7 @@ spec:
     numerical:
       order: asc
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:
   name: hello-confidence-website

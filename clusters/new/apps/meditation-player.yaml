@@ -14,7 +14,7 @@ spec:
     - name: ghcr.io/erix/meditation-player
       newTag: main-5-sha-7257cbd8e5136de087c5379fa10db8db9b00d09d # {"$imagepolicy":"flux-system:meditation-player:tag"}
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
 metadata:
   name: meditation-player
@@ -25,7 +25,7 @@ spec:
   secretRef:
     name: ghcr-credentials
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
 metadata:
   name: meditation-player
@@ -40,7 +40,7 @@ spec:
     numerical:
       order: asc
 ---
-apiVersion: image.toolkit.fluxcd.io/v1beta2
+apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageUpdateAutomation
 metadata:
   name: meditation-player
