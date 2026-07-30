@@ -13,6 +13,8 @@ spec:
       app: mail-relay
   template:
     metadata:
+      annotations:
+        homelab.erix.dev/config-revision: "ses-2026-07-30"
       labels:
         app: mail-relay
     spec:
