@@ -17,8 +17,8 @@ spec:
     name: flux-system
   images:
     - name: ghcr.io/erix/trading-dashboard
-      # Held for explicit, reviewed rollouts; image automation remains suspended.
-      newTag: master-86-sha-77568b8
+      # Automatically follow the newest successful master build selected by Flux.
+      newTag: master-90-sha-deaef46 # {"$imagepolicy":"flux-system:trading-dashboard:tag"}
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
@@ -52,7 +52,6 @@ metadata:
   name: trading-dashboard
   namespace: flux-system
 spec:
-  suspend: true
   interval: 1m
   sourceRef:
     kind: GitRepository
