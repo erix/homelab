@@ -52,6 +52,7 @@ metadata:
   name: trading-dashboard
   namespace: flux-system
 spec:
+  suspend: false
   interval: 1m
   sourceRef:
     kind: GitRepository
