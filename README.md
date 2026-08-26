@@ -7,6 +7,8 @@ supporting infrastructure configuration, and operational notes.
 Repository-local operational skills for coding agents are available under
 [`.agents/skills/`](.agents/skills/README.md).
 
+[![Erik's homelab overview](docs/diagrams/homelab-overview.png)](docs/diagrams/homelab-overview.png)
+
 > [!IMPORTANT]
 > The files in this repository describe desired state. Use `flux get
 > kustomizations -A` and `kubectl get pods -A` to verify the live cluster; do not
