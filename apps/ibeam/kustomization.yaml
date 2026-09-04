@@ -4,3 +4,12 @@ resources:
   - ibeam-deployment.yaml
   - ibeam-service.yaml
   - ibeam-inputs.yaml
+  - ibeam-autologin.yaml
+configMapGenerator:
+  - name: ibeam-autologin
+    files:
+      - ibeam-autologin.py
+    options:
+      disableNameSuffixHash: true
+      labels:
+        app: ibeam-autologin

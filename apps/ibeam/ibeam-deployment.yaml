@@ -79,6 +79,11 @@ spec:
               value: "INFO"
             - name: IBEAM_VERIFY_SSL
               value: "False"
+            # IBeam's bundled Selenium login cannot complete this account's
+            # two-stage IBKR SSO. Keep the Java gateway only; Playwright
+            # autologin (ibeam-autologin CronJob) owns authentication.
+            - name: IBEAM_START_ACTIVE
+              value: "false"
             - name: IBEAM_TWO_FA_HANDLER
               value: "PYOTP"
             # Override the IB Key default; this account uses authenticator TOTP.

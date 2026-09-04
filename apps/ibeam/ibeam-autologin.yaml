@@ -1,0 +1,105 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ibeam-autologin
+  namespace: default
+  labels:
+    app: ibeam-autologin
+spec:
+  # Weekdays covering the New York cash session plus European evening in UTC.
+  schedule: "*/10 12-23 * * 1-5"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app: ibeam-autologin
+        spec:
+          restartPolicy: Never
+          initContainers:
+            - name: fetch-secrets
+              image: 1password/op:2
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  echo "Fetching Client Portal credentials from 1Password..."
+                  op read "op://K8s/Interactivebrokers Kai/alias" > /secrets/IBEAM_ACCOUNT
+                  op read "op://K8s/Interactivebrokers Kai/passwordConfirm" > /secrets/IBEAM_PASSWORD
+                  op item get "Interactivebrokers Kai" --vault K8s --format json \
+                    | sed -n 's/.*secret=\([A-Z2-7a-z]*\).*/\1/p' \
+                    | head -n 1 > /secrets/IBEAM_PYOTP_SECRET
+                  for f in IBEAM_ACCOUNT IBEAM_PASSWORD IBEAM_PYOTP_SECRET; do
+                    if [ ! -s "/secrets/$f" ]; then
+                      echo "Missing $f from 1Password item" >&2
+                      exit 1
+                    fi
+                  done
+                  chmod 444 /secrets/*
+                  echo "Credentials fetched"
+              env:
+                - name: OP_SERVICE_ACCOUNT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: op-service-account
+                      key: token
+              volumeMounts:
+                - name: secrets
+                  mountPath: /secrets
+              resources:
+                requests:
+                  memory: "64Mi"
+                  cpu: "50m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "100m"
+          containers:
+            - name: autologin
+              image: mcr.microsoft.com/playwright/python:v1.50.0-noble
+              command:
+                - python3
+                - /app/ibeam-autologin.py
+              env:
+                - name: IBKR_CP_URL
+                  value: "https://ibeam.default.svc:5000"
+                - name: IBEAM_ACCOUNT_FILE
+                  value: /secrets/IBEAM_ACCOUNT
+                - name: IBEAM_PASSWORD_FILE
+                  value: /secrets/IBEAM_PASSWORD
+                - name: IBEAM_PYOTP_SECRET_FILE
+                  value: /secrets/IBEAM_PYOTP_SECRET
+              volumeMounts:
+                - name: secrets
+                  mountPath: /secrets
+                  readOnly: true
+                - name: script
+                  mountPath: /app
+                  readOnly: true
+                - name: dshm
+                  mountPath: /dev/shm
+              resources:
+                requests:
+                  memory: "512Mi"
+                  cpu: "200m"
+                limits:
+                  memory: "2Gi"
+                  cpu: "1000m"
+          volumes:
+            - name: secrets
+              emptyDir:
+                medium: Memory
+                sizeLimit: 1Mi
+            - name: script
+              configMap:
+                name: ibeam-autologin
+                defaultMode: 0555
+            - name: dshm
+              emptyDir:
+                medium: Memory
+                sizeLimit: 256Mi
