@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - ibeam-deployment.yaml
   - ibeam-service.yaml
+  - ibeam-inputs.yaml

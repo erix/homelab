@@ -8,7 +8,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate  # Only one instance per IBKR account
+    type: Recreate  # Only one Client Portal session per IBKR account
   selector:
     matchLabels:
       app: ibeam
@@ -17,10 +17,59 @@ spec:
       labels:
         app: ibeam
     spec:
+      initContainers:
+        - name: fetch-secrets
+          image: 1password/op:2
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              echo "Fetching Client Portal credentials from 1Password..."
+              op read "op://K8s/Interactivebrokers Kai/alias" > /secrets/IBEAM_ACCOUNT
+              op read "op://K8s/Interactivebrokers Kai/passwordConfirm" > /secrets/IBEAM_PASSWORD
+              # OTP field value is an otpauth URI; keep only the TOTP seed.
+              op item get "Interactivebrokers Kai" --vault K8s --format json \
+                | sed -n 's/.*secret=\([A-Z2-7a-z]*\).*/\1/p' \
+                | head -n 1 > /secrets/IBEAM_PYOTP_SECRET
+              for f in IBEAM_ACCOUNT IBEAM_PASSWORD IBEAM_PYOTP_SECRET; do
+                if [ ! -s "/secrets/$f" ]; then
+                  echo "Missing $f from 1Password item" >&2
+                  exit 1
+                fi
+              done
+              chmod 444 /secrets/*
+              echo "Credentials fetched"
+          env:
+            - name: OP_SERVICE_ACCOUNT_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: op-service-account
+                  key: token
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "100m"
+
       containers:
         - name: ibeam
           image: voyz/ibeam:latest
           imagePullPolicy: Always
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              export IBEAM_ACCOUNT="$(cat /secrets/IBEAM_ACCOUNT)"
+              export IBEAM_PASSWORD="$(cat /secrets/IBEAM_PASSWORD)"
+              export IBEAM_PYOTP_SECRET="$(cat /secrets/IBEAM_PYOTP_SECRET)"
+              echo "Starting IBeam Client Portal Gateway"
+              exec python /srv/ibeam/ibeam_starter.py
           ports:
             - containerPort: 5000
               name: rest-api
@@ -28,18 +77,63 @@ spec:
           env:
             - name: IBEAM_LOG_LEVEL
               value: "INFO"
-            # Disable SSL verification for internal health checks
             - name: IBEAM_VERIFY_SSL
               value: "False"
-            # Don't try to auto-authenticate; allow manual login via browser
-            - name: IBEAM_START_ACTIVE
-              value: "false"
+            - name: IBEAM_TWO_FA_HANDLER
+              value: "PYOTP"
+            # Override the IB Key default; this account uses authenticator TOTP.
+            - name: IBEAM_TWO_FA_SELECT_TARGET
+              value: "Mobile Authenticator App"
+            - name: IBEAM_GATEWAY_STARTUP
+              value: "60"
+            - name: IBEAM_PAGE_LOAD_TIMEOUT
+              value: "30"
+            - name: IBEAM_OAUTH_TIMEOUT
+              value: "60"
+            - name: IBEAM_INPUTS_DIR
+              value: "/srv/inputs/"
+          volumeMounts:
+            - name: secrets
+              mountPath: /secrets
+              readOnly: true
+            - name: ibeam-inputs
+              mountPath: /srv/inputs
+              readOnly: true
           resources:
             requests:
               memory: "512Mi"
               cpu: "200m"
             limits:
-              memory: "1Gi"
-              cpu: "500m"
+              memory: "2Gi"
+              cpu: "1000m"
+          startupProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+      volumes:
+        - name: secrets
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+        - name: ibeam-inputs
+          configMap:
+            name: ibeam-inputs
 
       restartPolicy: Always

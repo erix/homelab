@@ -12,6 +12,8 @@ spec:
   path: ../../apps/trading-dashboard
   prune: true
   targetNamespace: default
+  dependsOn:
+    - name: ibeam
   sourceRef:
     kind: GitRepository
     name: flux-system
