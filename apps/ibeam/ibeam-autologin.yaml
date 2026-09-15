@@ -8,6 +8,7 @@ metadata:
 spec:
   # Weekdays covering the New York cash session plus European evening in UTC.
   schedule: "*/10 12-23 * * 1-5"
+  suspend: true
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 3
