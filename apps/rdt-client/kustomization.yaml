@@ -5,6 +5,7 @@ resources:
   - pvc.yaml
   - filebot-trigger-script.yaml
   - rdt-filebot-integrations-sealed.yaml
+  - filebot-license-sealed.yaml
   - rdt-deployment.yaml
   - rdt-service.yaml
   - rdt-ingress.yaml
