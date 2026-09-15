@@ -183,20 +183,10 @@ def submit_browser_login(page, login_url: str, username: str, password: str, tot
                 otp_needed = True
                 loc.fill(totp(totp_secret), timeout=5000)
                 event("filled", stage=stage, field="otp", selector=selector)
-                otp_submitted = False
-                try:
-                    otp_submit = loc.locator("xpath=ancestor::form[1]").locator(
-                        'button[type="submit"], input[type="submit"]'
-                    ).first
-                    if otp_submit.count():
-                        otp_submit.click(timeout=5000, no_wait_after=True, force=True)
-                        otp_submitted = True
-                        event("clicked", stage=stage, control="submit_otp")
-                except Exception:
-                    pass
-                if not otp_submitted:
-                    loc.press("Enter")
-                    event("submitted", stage=stage, control="otp_enter")
+                # Prefer Enter: clicking the form submit button can re-POST credentials
+                # and surface a false "login failed" alert on the Client Portal gateway.
+                loc.press("Enter")
+                event("submitted", stage=stage, control="otp_enter")
                 page.wait_for_timeout(8000)
                 break
         except Exception:
@@ -219,14 +209,21 @@ def submit_browser_login(page, login_url: str, username: str, password: str, tot
             break
         page.wait_for_timeout(2000)
 
+    # If SSO already advanced past Login, ignore leftover alert DOM from earlier steps.
+    final_url = page.url.split("?")[0]
+    if "/sso/Login" not in final_url:
+        event("browser_login_stage_submitted", stage=stage, final_url=final_url)
+        return
+
     for selector in (".alert-danger", '[role="alert"]', ".xyz-alert-error"):
         for alert in page.locator(selector).all():
             try:
                 if not alert.is_visible():
                     continue
-                text = (alert.inner_text() or "").lower()
+                alert_text = (alert.inner_text() or "").strip()
+                lowered = alert_text.lower()
                 if any(
-                    marker in text
+                    marker in lowered
                     for marker in (
                         "authentication failed",
                         "login failed",
@@ -235,12 +232,15 @@ def submit_browser_login(page, login_url: str, username: str, password: str, tot
                         "incorrect password",
                     )
                 ):
-                    raise RuntimeError(f"IBKR rejected the {stage} login")
+                    event("login_rejected", stage=stage, alert=alert_text[:300], url=final_url)
+                    raise RuntimeError(
+                        f"IBKR rejected the {stage} login: {alert_text[:180]}"
+                    )
             except RuntimeError:
                 raise
             except Exception:
                 continue
-    event("browser_login_stage_submitted", stage=stage, final_url=page.url.split("?")[0])
+    event("browser_login_stage_submitted", stage=stage, final_url=final_url)
 
 
 def playwright_login(username: str, password: str, totp_secret: str) -> None:
