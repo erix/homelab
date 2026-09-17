@@ -5,7 +5,9 @@ resources:
   - ibeam-deployment.yaml
   - ibeam-service.yaml
   - ibeam-inputs.yaml
+  - ibeam-autologin-rbac.yaml
   - ibeam-autologin.yaml
+  - ibeam-keepalive.yaml
 configMapGenerator:
   - name: ibeam-autologin
     files:

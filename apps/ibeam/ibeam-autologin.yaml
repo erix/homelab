@@ -6,8 +6,9 @@ metadata:
   labels:
     app: ibeam-autologin
 spec:
-  # Weekdays covering the New York cash session plus European evening in UTC.
-  schedule: "*/10 12-23 * * 1-5"
+  # Weekdays 06-22 UTC (~08:00-00:00 Europe/Berlin): European morning through
+  # US cash close. Previous 12-23 UTC left an overnight gap that dropped CP sessions.
+  schedule: "*/10 6-22 * * 1-5"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 3
@@ -20,6 +21,7 @@ spec:
           labels:
             app: ibeam-autologin
         spec:
+          serviceAccountName: ibeam-autologin
           restartPolicy: Never
           initContainers:
             - name: fetch-secrets
