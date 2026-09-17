@@ -266,6 +266,34 @@ def playwright_login(username: str, password: str, totp_secret: str) -> None:
             browser.close()
 
 
+
+def notify_telegram(text: str) -> None:
+    """Best-effort Telegram alert. Uses movie-night-telegram secret if mounted."""
+    token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+    chat_id = (os.environ.get("TELEGRAM_CHAT_ID") or "").strip()
+    if not token or not chat_id:
+        event("telegram_skipped", reason="missing_env")
+        return
+    body = json.dumps(
+        {
+            "chat_id": chat_id,
+            "text": text[:3500],
+            "disable_web_page_preview": True,
+        }
+    ).encode()
+    req = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        data=body,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            event("telegram_sent", http_status=resp.status)
+    except Exception as e:
+        event("telegram_failed", error=str(e)[:200])
+
+
 def suspend_cronjob(reason: str) -> None:
     """Stop further autologin attempts after IBKR soft-lock. Requires SA RBAC."""
     import urllib.error
@@ -305,6 +333,12 @@ def suspend_cronjob(reason: str) -> None:
                 "cronjob_suspended",
                 reason=reason[:200],
                 http_status=resp.status,
+            )
+            notify_telegram(
+                "🚨 IBeam autologin suspended\n"
+                f"Reason: {reason[:300]}\n"
+                "IBKR soft-lock likely. Log into interactivebrokers.ie, "
+                "then ask Homelab Ops to unsuspend / run one Job."
             )
     except Exception as e:
         event("cronjob_suspend_failed", reason=reason[:200], error=str(e)[:200])

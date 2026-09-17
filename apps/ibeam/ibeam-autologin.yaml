@@ -77,6 +77,18 @@ spec:
                   value: /secrets/IBEAM_PASSWORD
                 - name: IBEAM_PYOTP_SECRET_FILE
                   value: /secrets/IBEAM_PYOTP_SECRET
+                - name: TELEGRAM_BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: movie-night-telegram
+                      key: telegram-bot-token
+                      optional: true
+                - name: TELEGRAM_CHAT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: movie-night-telegram
+                      key: telegram-group-id
+                      optional: true
               volumeMounts:
                 - name: secrets
                   mountPath: /secrets
