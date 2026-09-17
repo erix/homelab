@@ -152,3 +152,31 @@ spec:
       labels:
         component: kubernetes
         severity: warning
+
+  - interval: 30s
+    name: homelab-ibeam
+    rules:
+    - alert: HomelabIbeamAutologinSuspended
+      annotations:
+        description: >
+          ibeam-autologin CronJob is suspended (often after IBKR soft-lock /
+          Authentication failed). Log into interactivebrokers.ie, then unsuspend
+          or re-run a one-off Job so Client Portal can reauth.
+        summary: "🚨 IBeam autologin CronJob is SUSPENDED"
+      expr: kube_cronjob_spec_suspend{namespace="default",cronjob="ibeam-autologin"} == 1
+      for: 15m
+      labels:
+        component: ibeam
+        severity: critical
+    - alert: HomelabIbeamAutologinFailing
+      annotations:
+        description: >
+          Recent ibeam-autologin Jobs are failing. Repeated Authentication failed
+          will soft-lock IBKR — check logs and avoid hammering.
+        summary: "⚠️  IBeam autologin Jobs failing"
+      expr: |
+        sum(increase(kube_job_status_failed{namespace="default",job_name=~"ibeam-autologin-.*"}[30m])) > 2
+      for: 20m
+      labels:
+        component: ibeam
+        severity: warning

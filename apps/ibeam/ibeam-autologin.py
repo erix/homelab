@@ -10,6 +10,7 @@ import hmac
 import hashlib
 import json
 import os
+from pathlib import Path
 import ssl
 import struct
 import sys
@@ -265,6 +266,51 @@ def playwright_login(username: str, password: str, totp_secret: str) -> None:
             browser.close()
 
 
+def suspend_cronjob(reason: str) -> None:
+    """Stop further autologin attempts after IBKR soft-lock. Requires SA RBAC."""
+    import urllib.error
+    import urllib.request
+
+    token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    ca_path = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    ns_path = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+    try:
+        token = Path(token_path).read_text().strip()
+        namespace = Path(ns_path).read_text().strip()
+    except Exception as e:
+        event("cronjob_suspend_skipped", reason="no_serviceaccount", error=str(e)[:160])
+        return
+
+    host = os.environ.get("KUBERNETES_SERVICE_HOST", "kubernetes.default.svc")
+    port = os.environ.get("KUBERNETES_SERVICE_PORT", "443")
+    url = (
+        f"https://{host}:{port}/apis/batch/v1/namespaces/{namespace}"
+        "/cronjobs/ibeam-autologin"
+    )
+    patch = json.dumps({"spec": {"suspend": True}}).encode()
+    ctx = ssl.create_default_context(cafile=ca_path)
+    req = urllib.request.Request(
+        url,
+        data=patch,
+        method="PATCH",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/merge-patch+json",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+            event(
+                "cronjob_suspended",
+                reason=reason[:200],
+                http_status=resp.status,
+            )
+    except Exception as e:
+        event("cronjob_suspend_failed", reason=reason[:200], error=str(e)[:200])
+
+
+
 def main() -> int:
     try:
         status = auth_status()
@@ -290,7 +336,11 @@ def main() -> int:
         event("status_after_login", **status)
         return 0 if status["authenticated"] else 2
     except Exception as e:
-        event("error", message=str(e))
+        msg = str(e)
+        event("error", message=msg)
+        lowered = msg.lower()
+        if "authentication failed" in lowered or "ibkr rejected" in lowered:
+            suspend_cronjob(msg)
         return 1
 
 

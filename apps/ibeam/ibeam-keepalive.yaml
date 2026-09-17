@@ -1,0 +1,50 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ibeam-keepalive
+  namespace: default
+  labels:
+    app: ibeam-keepalive
+spec:
+  # Same weekday window as autologin (06-22 UTC). Light tickle only — never logs in.
+  schedule: "*/5 6-22 * * 1-5"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 600
+      template:
+        metadata:
+          labels:
+            app: ibeam-keepalive
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: keepalive
+              image: curlimages/curl:8.5.0
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  BASE="https://ibeam.default.svc:5000"
+                  STATUS=$(curl -sk --max-time 10 "$BASE/v1/api/iserver/auth/status" || true)
+                  echo "auth_status=$STATUS"
+                  case "$STATUS" in
+                    *'"authenticated":true'*|*'"authenticated": true'*)
+                      curl -sk --max-time 10 "$BASE/v1/api/tickle" >/tmp/tickle || true
+                      echo "event=tickle_ok"
+                      ;;
+                    *)
+                      echo "event=unauthenticated"
+                      ;;
+                  esac
+              resources:
+                requests:
+                  memory: "16Mi"
+                  cpu: "10m"
+                limits:
+                  memory: "32Mi"
+                  cpu: "50m"
