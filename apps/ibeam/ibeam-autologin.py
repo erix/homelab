@@ -345,16 +345,116 @@ def suspend_cronjob(reason: str) -> None:
 
 
 
+
+def soft_reauth() -> dict:
+    """Try to revive an existing CP session without username/OTP."""
+    event("soft_reauth_start")
+    try:
+        http, data = request_json("GET", "/tickle")
+        iserver = data.get("iserver") if isinstance(data, dict) else None
+        auth = None
+        if isinstance(iserver, dict):
+            auth = bool((iserver.get("authStatus") or {}).get("authenticated"))
+        event("tickle", http_status=http, authenticated=auth)
+    except Exception as e:
+        event("tickle_failed", error=str(e)[:160])
+    try:
+        http, data = request_json("POST", "/iserver/reauthenticate")
+        event(
+            "reauthenticate",
+            http_status=http,
+            message=str((data or {}).get("message", ""))[:120],
+        )
+    except Exception as e:
+        event("reauthenticate_failed", error=str(e)[:160])
+    try:
+        http, data = request_json(
+            "POST", "/iserver/auth/ssodh/init?publish=true&compete=true"
+        )
+        event(
+            "ssodh_init",
+            http_status=http,
+            authenticated=bool((data or {}).get("authenticated")),
+            connected=bool((data or {}).get("connected")),
+        )
+    except Exception as e:
+        event("ssodh_init_failed", error=str(e)[:160])
+    status = auth_status()
+    event("soft_reauth_result", **status)
+    return status
+
+
+def other_autologin_job_active() -> bool:
+    """True if another ibeam-autologin Job is already Active (manual vs Cron race)."""
+    token_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    ca_path = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+    ns_path = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+    try:
+        token = Path(token_path).read_text().strip()
+        namespace = Path(ns_path).read_text().strip()
+    except Exception as e:
+        event("job_race_check_skipped", error=str(e)[:160])
+        return False
+
+    host = os.environ.get("KUBERNETES_SERVICE_HOST", "kubernetes.default.svc")
+    port = os.environ.get("KUBERNETES_SERVICE_PORT", "443")
+    url = f"https://{host}:{port}/apis/batch/v1/namespaces/{namespace}/jobs"
+    ctx = ssl.create_default_context(cafile=ca_path)
+    req = urllib.request.Request(
+        url,
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/json"},
+    )
+    self_name = os.environ.get("HOSTNAME", "")
+    try:
+        with urllib.request.urlopen(req, context=ctx, timeout=10) as resp:
+            payload = json.loads(resp.read().decode())
+    except Exception as e:
+        event("job_race_check_failed", error=str(e)[:200])
+        return False
+
+    active = []
+    for item in payload.get("items") or []:
+        name = (item.get("metadata") or {}).get("name", "")
+        if not name.startswith("ibeam-autologin"):
+            continue
+        if self_name.startswith(name + "-") or self_name == name:
+            continue
+        status = item.get("status") or {}
+        if int(status.get("active") or 0) > 0:
+            active.append(name)
+    if active:
+        event("other_autologin_active", jobs=active)
+        return True
+    return False
+
+
+
 def main() -> int:
+    full_login_attempted = False
     try:
         status = auth_status()
         event("status", **status)
+        if status.get("competing"):
+            event(
+                "competing_session",
+                note="another TWS/Gateway session may be contesting this account",
+            )
         if status["authenticated"]:
+            return 0
+
+        # Prefer session revive over burning an OTP.
+        status = soft_reauth()
+        if status["authenticated"]:
+            return 0
+
+        if other_autologin_job_active():
+            event("skip_full_login", reason="another_autologin_job_active")
             return 0
 
         username = read_secret(ACCOUNT_FILE)
         password = read_secret(PASSWORD_FILE)
         totp_secret = read_secret(TOTP_FILE)
+        full_login_attempted = True
         playwright_login(username, password, totp_secret)
 
         http, init_data = request_json(
@@ -368,12 +468,25 @@ def main() -> int:
         )
         status = auth_status()
         event("status_after_login", **status)
-        return 0 if status["authenticated"] else 2
+        if status["authenticated"]:
+            return 0
+        suspend_cronjob("full login completed but still unauthenticated")
+        return 2
     except Exception as e:
         msg = str(e)
         event("error", message=msg)
         lowered = msg.lower()
-        if "authentication failed" in lowered or "ibkr rejected" in lowered:
+        soft_lock_markers = (
+            "authentication failed",
+            "ibkr rejected",
+            "login failed",
+            "login rejected",
+            "too many",
+            "soft-lock",
+            "soft lock",
+            "temporarily locked",
+        )
+        if full_login_attempted or any(m in lowered for m in soft_lock_markers):
             suspend_cronjob(msg)
         return 1
 
