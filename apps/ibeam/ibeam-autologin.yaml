@@ -10,11 +10,16 @@ spec:
   # US cash close. Previous 12-23 UTC left an overnight gap that dropped CP sessions.
   schedule: "*/10 6-22 * * 1-5"
   concurrencyPolicy: Forbid
+  # Manual restore Jobs can still race this CronJob — keep suspend=true
+  # while creating one-off Jobs, or rely on the script Active-job guard.
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 3
   jobTemplate:
+    metadata:
+      labels:
+        app: ibeam-autologin
     spec:
-      backoffLimit: 1
+      backoffLimit: 0
       ttlSecondsAfterFinished: 3600
       template:
         metadata:
