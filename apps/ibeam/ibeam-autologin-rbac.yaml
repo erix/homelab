@@ -18,6 +18,10 @@ rules:
     resources: ["cronjobs"]
     resourceNames: ["ibeam-autologin"]
     verbs: ["get", "patch"]
+  # Soft-lock harden: skip full OTP login if another Job is already Active.
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

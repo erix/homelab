@@ -24,6 +24,19 @@ spec:
           containers:
             - name: keepalive
               image: curlimages/curl:8.5.0
+              env:
+                - name: TELEGRAM_BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: movie-night-telegram
+                      key: telegram-bot-token
+                      optional: true
+                - name: TELEGRAM_CHAT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: movie-night-telegram
+                      key: telegram-group-id
+                      optional: true
               command:
                 - /bin/sh
                 - -c
@@ -39,6 +52,26 @@ spec:
                       ;;
                     *)
                       echo "event=unauthenticated"
+                      # Rate-limit Telegram to :00 and :30 UTC to avoid 5m spam.
+                      MIN=$(date -u +%M)
+                      case "$MIN" in
+                        00|30)
+                          if [ -n "${TELEGRAM_BOT_TOKEN:-}" ] && [ -n "${TELEGRAM_CHAT_ID:-}" ]; then
+                            TEXT="IBeam keepalive: session unauthenticated. Autologin will try tickle/reauth before OTP."
+                            curl -sS --max-time 15 \
+                              -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                              --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+                              --data-urlencode "text=${TEXT}" \
+                              >/tmp/tg || echo "event=telegram_failed"
+                            echo "event=telegram_auth_false_alert"
+                          else
+                            echo "event=telegram_skipped_missing_env"
+                          fi
+                          ;;
+                        *)
+                          echo "event=telegram_rate_limited"
+                          ;;
+                      esac
                       ;;
                   esac
               resources:
