@@ -50,9 +50,10 @@ spec:
                       curl -sk --max-time 10 "$BASE/v1/api/tickle" >/tmp/tickle || true
                       echo "event=tickle_ok"
                       ;;
-                    *)
+                    *'"authenticated":false'*|*'"authenticated": false'*)
                       echo "event=unauthenticated"
-                      # Rate-limit Telegram to :00 and :30 UTC to avoid 5m spam.
+                      # Only alert on a definitive false — empty/failed curls are not soft-locks.
+                      # Rate-limit to :00 and :30 UTC.
                       MIN=$(date -u +%M)
                       case "$MIN" in
                         00|30)
@@ -72,6 +73,10 @@ spec:
                           echo "event=telegram_rate_limited"
                           ;;
                       esac
+                      ;;
+                    *)
+                      # Empty body / curl failure / unexpected payload — do not Telegram.
+                      echo "event=status_unreachable"
                       ;;
                   esac
               resources:
