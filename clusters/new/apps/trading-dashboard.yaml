@@ -20,7 +20,7 @@ spec:
   images:
     - name: ghcr.io/erix/trading-dashboard
       # Automatically follow the newest successful master build selected by Flux.
-      newTag: master-221-sha-a17d7e7 # {"$imagepolicy":"flux-system:trading-dashboard:tag"}
+      newTag: master-223-sha-df10a3a # {"$imagepolicy":"flux-system:trading-dashboard:tag"}
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
