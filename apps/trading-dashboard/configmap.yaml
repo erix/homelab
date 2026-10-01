@@ -12,7 +12,7 @@ data:
   PLAYBOOK_FILE: "/data/playbook.md"
   BACKUP_ENABLED: "true"
   BACKUP_DIR: "/data/db/backups"
-  DASHBOARD_AUTH_REQUIRED: "true"
+  DASHBOARD_AUTH_REQUIRED: "false"
   DASHBOARD_COOKIE_SECURE: "true"
   RECONCILIATION_ENABLED: "true"
   RECONCILIATION_APPLY_ENABLED: "false"
