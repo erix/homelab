@@ -7,6 +7,9 @@ metadata:
     app: trading-dashboard
 spec:
   replicas: 1
+  # One SQLite file on a hostPath: never run an old and a new pod side by side.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: trading-dashboard
