@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: remux
+  namespace: remux
+  labels:
+    app: remux
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: remux
+  template:
+    metadata:
+      labels:
+        app: remux
+    spec:
+      containers:
+        - name: remux
+          # v0.35.1 matches ghcr.io/lostb1t/remux:latest as of 2026-10-03.
+          image: ghcr.io/lostb1t/remux:0.35.1@sha256:262e89d488e3fab49d58db0b9ec3201ed8ce7dc5055ea862767e7e7c451957da
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: remux-data

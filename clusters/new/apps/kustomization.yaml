@@ -24,6 +24,7 @@ resources:
   - movie-night.yaml
   - movie-night-image-policy.yaml
   - meditation-player.yaml
+  - remux.yaml
   # Network
   - unifi.yaml
   # Tools

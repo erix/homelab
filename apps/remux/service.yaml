@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: remux
+  namespace: remux
+  labels:
+    app: remux
+spec:
+  type: ClusterIP
+  selector:
+    app: remux
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP
