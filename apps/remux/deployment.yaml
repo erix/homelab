@@ -19,8 +19,9 @@ spec:
     spec:
       containers:
         - name: remux
-          # v0.35.1 matches ghcr.io/lostb1t/remux:latest as of 2026-10-03.
-          image: ghcr.io/lostb1t/remux:0.35.1@sha256:262e89d488e3fab49d58db0b9ec3201ed8ce7dc5055ea862767e7e7c451957da
+          # Built from erix/remux's deploy branch (upstream + own commits);
+          # Flux's remux image policy bumps the tag on each new build.
+          image: ghcr.io/erix/remux:0.35.1-erix.1 # {"$imagepolicy":"flux-system:remux"}
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
