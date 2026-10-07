@@ -21,7 +21,7 @@ spec:
         - name: remux
           # Built from erix/remux's deploy branch (upstream + own commits);
           # Flux's remux image policy bumps the tag on each new build.
-          image: ghcr.io/erix/remux:0.35.1-erix.1 # {"$imagepolicy":"flux-system:remux"}
+          image: ghcr.io/erix/remux:0.36.1-erix.2 # {"$imagepolicy":"flux-system:remux"}
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
