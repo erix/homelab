@@ -13,7 +13,7 @@ spec:
     name: flux-system
   images:
     - name: ghcr.io/fuloptimea-rgb/hello-confidence-website
-      newTag: main-100-sha-079d58a299260c58a8c1677769eca6977b16b50b # {"$imagepolicy":"flux-system:hello-confidence-website:tag"}
+      newTag: main-101-sha-5646dc130bda34db153046978ceb147137bcccfa # {"$imagepolicy":"flux-system:hello-confidence-website:tag"}
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImageRepository
