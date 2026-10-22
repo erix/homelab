@@ -70,4 +70,4 @@ def test_each_problem_is_reported_once_when_it_opens_and_once_when_it_clears():
 
 def test_emails_carry_date_and_message_id():
     msg = w.compose({"x": "broken"}, {}, 1)
-    assert msg["Date"] and msg["Message-ID"].endswith("@erix-homelab.site>")
+    assert msg["Date"].endswith(" GMT") and msg["Message-ID"].endswith("@erix-homelab.site>")
