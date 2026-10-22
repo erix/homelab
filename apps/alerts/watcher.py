@@ -16,6 +16,7 @@ import urllib.error
 import urllib.request
 from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
+from email.utils import formatdate, make_msgid
 
 ANNOTATION = "alerts.erix-homelab.site/max-age"
 STATE = "alerts-state"
@@ -95,6 +96,10 @@ def compose(opened: dict[str, str], resolved: dict[str, dict], still_open: int) 
         parts.append(f"{len(resolved)} resolved")
     msg = EmailMessage()
     msg["Subject"] = f"[homelab] {', '.join(parts)}"
+    # Neither smtplib nor mail-relay adds these for mail from pods, and Gmail
+    # may drop or spam-file a message without them.
+    msg["Date"] = formatdate(localtime=False)
+    msg["Message-ID"] = make_msgid(domain="erix-homelab.site")
     body = []
     for key, message in opened.items():
         body.append(f"PROBLEM  {key}\n{message}\n")

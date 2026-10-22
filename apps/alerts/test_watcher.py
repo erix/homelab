@@ -66,3 +66,8 @@ def test_each_problem_is_reported_once_when_it_opens_and_once_when_it_clears():
     assert opened == {} and list(resolved) == ["x"] and state3 == {}
     msg = w.compose({}, resolved, 0)
     assert msg["Subject"] == "[homelab] 1 resolved" and "RESOLVED x (open since 2026-10-23T12:00:00+00:00)" in msg.get_content()
+
+
+def test_emails_carry_date_and_message_id():
+    msg = w.compose({"x": "broken"}, {}, 1)
+    assert msg["Date"] and msg["Message-ID"].endswith("@erix-homelab.site>")
