@@ -25,7 +25,7 @@ spec:
     name: watchlist-sync
   images:
     - name: ghcr.io/erix/watchlist-sync
-      newTag: main-1-sha-5f0c2efc72613f760933e9a964a3395737ead679 # {"$imagepolicy":"flux-system:watchlist-sync:tag"}
+      newTag: main-2-sha-e59f54e2e5a31d55f22931f491f3e408da12930b # {"$imagepolicy":"flux-system:watchlist-sync:tag"}
   healthChecks:
     - apiVersion: apps/v1
       kind: Deployment
