@@ -225,6 +225,7 @@ Load only the reference matching the task:
 - `references/unifi-dhcp-local-dns.md`
 - `references/unifi-pihole-hostnames.md`
 - `references/tailscale-routing.md`
+- `references/backups-and-alerts.md`
 
 Reference commands may contain repository-specific resource names and example addresses. Confirm them against current manifests and live resources before use. Environment paths and access hosts must always be discovered at runtime.
 
