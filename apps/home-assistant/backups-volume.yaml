@@ -1,0 +1,29 @@
+# TrueNAS share for the home-automation backup CronJobs. Each job writes to its
+# own folder. The share's Maproot must be root: the jobs run as root.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: k3s-backups-pv
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 500Gi
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: k3s-backups-pvc
+  namespace: home-automation
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: ""
+  volumeName: k3s-backups-pv

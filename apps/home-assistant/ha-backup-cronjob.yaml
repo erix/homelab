@@ -1,0 +1,57 @@
+# Copies Home Assistant's own nightly backups to TrueNAS, keeping the newest 30.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: homeassistant-backup
+  namespace: home-automation
+spec:
+  schedule: "30 5 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: ha-backup
+              image: alpine:3.19
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  dest=/backups/homeassistant
+                  mkdir -p "$dest"
+                  rm -f "$dest"/*.partial
+                  newest=$(ls -t /ha-backups/*.tar | head -n 1)
+                  # Home Assistant writes its own backup nightly; a stale newest one means that broke.
+                  if [ -z "$(find "$newest" -mtime -2)" ]; then
+                    echo "newest Home Assistant backup is older than 2 days: $newest" >&2
+                    exit 1
+                  fi
+                  for f in /ha-backups/*.tar; do
+                    name=$(basename "$f")
+                    [ -f "$dest/$name" ] && continue
+                    cp "$f" "$dest/$name.partial"
+                    mv "$dest/$name.partial" "$dest/$name"
+                    echo "copied $name"
+                  done
+                  ls -t "$dest"/*.tar | tail -n +31 | xargs -r rm -f
+                  ls -lh "$dest" | tail -n 3
+              volumeMounts:
+                - name: ha-data
+                  mountPath: /ha-backups
+                  subPath: backups
+                  readOnly: true
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: ha-data
+              persistentVolumeClaim:
+                claimName: homeassistant-pvc
+            - name: backups
+              persistentVolumeClaim:
+                claimName: k3s-backups-pvc

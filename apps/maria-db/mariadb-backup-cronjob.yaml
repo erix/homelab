@@ -1,0 +1,49 @@
+# Dumps all MariaDB databases to TrueNAS, keeping the newest 30.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mariadb-backup
+  namespace: home-automation
+spec:
+  schedule: "0 1 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: mariadb-backup
+              image: mariadb:10.11.6
+              # /bin/sh is dash here, which has no pipefail.
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  dest=/backups/mariadb
+                  mkdir -p "$dest"
+                  file="$dest/mariadb-$(date +%F).sql.gz"
+                  mysqldump -h mariadb-service -u root --all-databases --single-transaction | gzip > "$file.partial"
+                  gzip -t "$file.partial"
+                  # A dump cut short still compresses cleanly; only a finished one ends with this line.
+                  zcat "$file.partial" | tail -n 1 | grep -q "Dump completed"
+                  mv "$file.partial" "$file"
+                  ls -t "$dest"/mariadb-*.sql.gz | tail -n +31 | xargs -r rm -f
+                  ls -lh "$file"
+              env:
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: mariadb-password
+                      key: rootPassword
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: k3s-backups-pvc
