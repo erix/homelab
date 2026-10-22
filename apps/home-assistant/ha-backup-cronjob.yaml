@@ -4,6 +4,8 @@ kind: CronJob
 metadata:
   name: homeassistant-backup
   namespace: home-automation
+  annotations:
+    alerts.erix-homelab.site/max-age: 26h
 spec:
   schedule: "30 5 * * *"
   concurrencyPolicy: Forbid

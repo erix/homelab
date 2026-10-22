@@ -1,0 +1,49 @@
+# Emails erik.simko@gmail.com through mail-relay when an opted-in CronJob fails
+# or a health URL stops answering 200. A CronJob opts in with the annotation
+# alerts.erix-homelab.site/max-age (time allowed since its last success).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: alerts-watcher
+spec:
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 300
+      template:
+        spec:
+          serviceAccountName: alerts-watcher
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          containers:
+            - name: watcher
+              image: python:3.13-alpine
+              command: ["python", "/app/watcher.py"]
+              env:
+                - name: ALERT_TO
+                  value: erik.simko@gmail.com
+                - name: ALERT_FROM
+                  value: alerts@erix-homelab.site
+                - name: SMTP_HOST
+                  value: mail-relay.default.svc.cluster.local
+                - name: HEALTH_URLS
+                  value: '{"watchlist-sync": "http://watchlist-sync.watchlist-sync.svc.cluster.local:8080/healthz/sync"}'
+              volumeMounts:
+                - name: watcher
+                  mountPath: /app
+              resources:
+                requests:
+                  memory: 32Mi
+                  cpu: 10m
+                limits:
+                  memory: 128Mi
+          volumes:
+            - name: watcher
+              configMap:
+                name: alerts-watcher

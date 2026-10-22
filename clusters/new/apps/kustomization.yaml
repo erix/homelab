@@ -39,6 +39,8 @@ resources:
   - subscription-tracker.yaml
   - hello-confidence-website.yaml
   - hello-confidence-tunnel.yaml
+  # Monitoring
+  - alerts.yaml
   # External Service Ingresses (TrueNAS + Kaiburg)
   - truenas-paperless-ingress.yaml
   - truenas-jackettio-ingress.yaml
