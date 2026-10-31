@@ -1,0 +1,17 @@
+# /config holds rex.db (SQLite: watch state, edits, each source's registration and credential),
+# claim_state.json (the Plex claim) and Plex's metadata cache. Local SSD; back up with
+# `sqlite3 /config/rex.db ".backup /config/rex.db.bak"` plus claim_state.json.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rex-config
+  namespace: rex
+  labels:
+    app: rex
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 10Gi

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rex
+  namespace: rex
+  labels:
+    app: rex
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rex
+  template:
+    metadata:
+      labels:
+        app: rex
+    spec:
+      # rex saves its state on SIGTERM.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: rex
+          # rex (debridmediamanager): a Plex-compatible server that streams from debrid/Stremio/HTTP
+          # sources. Pinned release by tag+digest, no image automation.
+          image: ghcr.io/debridmediamanager/rex:0.4.0@sha256:16ade6febe4b68f8bb6f6dd71f0c91f2035045da84db7ca151f9ccf3f280757e
+          imagePullPolicy: IfNotPresent
+          # Inside a pod rex only knows its pod IP, so announce the MetalLB LAN address
+          # (plain http, what sources and LAN apps use) and the Traefik HTTPS name (app.plex.tv needs HTTPS).
+          args:
+            - --announce-url
+            - http://192.168.11.215:32400,https://rex.erix-homelab.site:443
+          env:
+            - name: TZ
+              value: "Europe/Berlin"
+            # LAN-only: no router port-forward, so no rex-direct public name/cert.
+            - name: REX_DIRECT_URL
+              value: "off"
+            # No /dev/dri passed in (unprivileged); software conversion only.
+            - name: REX_TRANSCODE_HW
+              value: "none"
+          ports:
+            - name: http
+              containerPort: 32400
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 4Gi
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: rex-config

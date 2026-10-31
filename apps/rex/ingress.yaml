@@ -1,0 +1,66 @@
+# HTTPS name for Plex apps (app.plex.tv needs HTTPS). LAN/Tailscale only (*.erix-homelab.site -> Traefik).
+# rex treats any private peer (incl. Traefik) as local, so its source feed /rex/ is blocked here
+# (upstream: "a reverse proxy ... must block /rex/"). Sources use http://192.168.11.215:32400 directly.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rex
+  namespace: rex
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - rex.erix-homelab.site
+      secretName: erix-homelab-site-tls
+  rules:
+    - host: rex.erix-homelab.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: rex
+                port:
+                  number: 32400
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: deny-all
+  namespace: rex
+spec:
+  ipAllowList:
+    sourceRange:
+      - 127.0.0.1/32
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rex-block-feed
+  namespace: rex
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: rex-deny-all@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - rex.erix-homelab.site
+      secretName: erix-homelab-site-tls
+  rules:
+    - host: rex.erix-homelab.site
+      http:
+        paths:
+          - path: /rex
+            pathType: Prefix
+            backend:
+              service:
+                name: rex
+                port:
+                  number: 32400

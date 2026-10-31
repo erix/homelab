@@ -1,0 +1,20 @@
+# rex must be reachable as http://<LAN IP>:32400: sources (rex-stremio, zurg) register at that
+# address and Plex apps on the LAN connect to it directly. Dedicated MetalLB IP; Plex stays on its own.
+apiVersion: v1
+kind: Service
+metadata:
+  name: rex
+  namespace: rex
+  labels:
+    app: rex
+  annotations:
+    metallb.universe.tf/loadBalancerIPs: 192.168.11.215
+spec:
+  type: LoadBalancer
+  selector:
+    app: rex
+  ports:
+    - name: http
+      port: 32400
+      targetPort: http
+      protocol: TCP
