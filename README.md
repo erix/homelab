@@ -79,7 +79,7 @@ The active kustomization currently declares these groups:
 | Storage | SSD-backed local-path provisioner |
 | Media | RDT Client, Immich, Plex, Calibre, AIO Metadata, AIOStreams, Movie Night, Meditation Player |
 | Network management | UniFi |
-| Tools and services | n8n, Pastefy, IB Gateway, IBeam, Splitbot, Trading Dashboard, Subscription Tracker, Hello Confidence |
+| Tools and services | Pastefy, IB Gateway, IBeam, Splitbot, Trading Dashboard, Subscription Tracker, Hello Confidence |
 | External endpoints | TrueNAS Paperless, Jackettio and MinIO ingresses; Kaiburg and Proxmox ingresses; Splitbot tunnel |
 
 This is a declaration inventory, not a runtime status list. For the exact and

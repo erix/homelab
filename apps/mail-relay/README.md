@@ -41,8 +41,8 @@ Key fields:
 - Optional DKIM material (`DKIM_SELECTOR`, `DKIM_KEY`) if your provider expects
   you to sign mail yourself rather than via their platform.
 - Optional `SMTPD_SASL_USERS`: comma-separated `user:password` pairs that are
-  allowed to run SMTP AUTH against the relay. This is handy for workflows (like
-  n8n) that require credentials even on trusted networks.
+  allowed to run SMTP AUTH against the relay. This is handy for clients
+  that require credentials even on trusted networks.
 
 ## Deploy
 
@@ -63,7 +63,7 @@ Point applications at `mail-relay.default.svc.cluster.local:25` (plain) or
   CIDRs listed in `MYNETWORKS`.
 - If you populate `SMTPD_SASL_USERS`, clients can authenticate with those
   credentials via SMTP AUTH (LOGIN/PLAIN) and you can hand the same username/
-  password to tools such as the n8n Send Email node.
+  password to SMTP clients that support it.
 
 ## DNS and Deliverability
 - Keep your SPF record pointing at the upstream provider, not this relay.
