@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rex-stremio
+  labels:
+    app: rex-stremio
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: rex-stremio
+  template:
+    metadata:
+      labels:
+        app: rex-stremio
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      initContainers:
+        - name: setup
+          image: python:3.12.16-slim@sha256:8523d6abeb48ceae0b7240d30c5808fc26cb79c1a635bacdf19cf3baecfbec07
+          command: ["python3", "/app/setup.py"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: app
+              mountPath: /app
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+      containers:
+        - name: rex-stremio
+          # Upstream ships no image; same base as its Dockerfile, script from the ConfigMap
+          # (rex-stremio commit 26555dd), static ffprobe from setup. Pinned, no image automation.
+          image: python:3.12.16-slim@sha256:8523d6abeb48ceae0b7240d30c5808fc26cb79c1a635bacdf19cf3baecfbec07
+          command: ["python3", "/app/rex_stremio.py", "--config", "/data/config.json"]
+          workingDir: /data
+          env:
+            - name: TZ
+              value: "Europe/Berlin"
+            - name: PATH
+              value: "/data/bin:/usr/local/bin:/usr/bin:/bin"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 9982
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: app
+              mountPath: /app
+              readOnly: true
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 1Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rex-stremio-data
+        - name: app
+          configMap:
+            name: rex-stremio-app

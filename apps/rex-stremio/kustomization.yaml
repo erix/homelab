@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: rex
+resources:
+  - pvc.yaml
+  - deployment.yaml
+  - service.yaml
+# rex_stremio.py is vendored verbatim (MIT) from github.com/debridmediamanager/rex-stremio at
+# commit 26555ddf8aec093751ef46a69e5e06479d38ce07 (2026-10-31); upstream publishes no image or tags.
+# To update: replace the file with a newer commit's copy and update the SHA here and in deployment.yaml.
+configMapGenerator:
+  - name: rex-stremio-app
+    files:
+      - rex_stremio.py
+      - setup.py

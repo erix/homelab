@@ -1,0 +1,15 @@
+# /data: config.json (mode 600; addon manifest URLs, which can hold debrid keys - set via the
+# settings page, never in git), cache/ (each title's ffprobe result) and bin/ffprobe.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rex-stremio-data
+  labels:
+    app: rex-stremio
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 2Gi
