@@ -30,6 +30,19 @@ spec:
                 name: trading-dashboard-config
             - secretRef:
                 name: trading-dashboard-operator
+          env:
+            - name: IBKR_FLEX_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: trading-dashboard-ibkr-flex
+                  key: IBKR_FLEX_TOKEN
+                  optional: true
+            - name: IBKR_FLEX_QUERY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: trading-dashboard-ibkr-flex
+                  key: IBKR_FLEX_QUERY_ID
+                  optional: true
           volumeMounts:
             - name: positions-db
               mountPath: /data/db
