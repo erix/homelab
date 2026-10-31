@@ -27,6 +27,7 @@ resources:
   - remux.yaml
   - remux-image-policy.yaml
   - antennarr.yaml
+  - threadfin.yaml
   # Network
   - unifi.yaml
   # Tools

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: threadfin
+  namespace: threadfin
+  labels:
+    app: threadfin
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: threadfin
+  template:
+    metadata:
+      labels:
+        app: threadfin
+    spec:
+      containers:
+        - name: threadfin
+          # M3U/XMLTV -> Plex HDHomeRun tuner. Pinned by tag+digest, no image automation.
+          image: fyb3roptik/threadfin:1.2.37@sha256:96122ab220e14b881cbd40d7f8c7b022e1f9c6ecfe05aca2ab801e0321dc0d61
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TZ
+              value: "Europe/Berlin"
+            - name: THREADFIN_PORT
+              value: "34400"
+          ports:
+            - name: http
+              containerPort: 34400
+          volumeMounts:
+            - name: conf
+              mountPath: /home/threadfin/conf
+            - name: tmp
+              mountPath: /tmp/threadfin
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: conf
+          persistentVolumeClaim:
+            claimName: threadfin-conf
+        # Stream buffer scratch space.
+        - name: tmp
+          emptyDir:
+            sizeLimit: 2Gi

@@ -1,0 +1,17 @@
+# Plex (namespace plex) uses http://threadfin.threadfin.svc.cluster.local:34400 as the HDHomeRun tuner.
+apiVersion: v1
+kind: Service
+metadata:
+  name: threadfin
+  namespace: threadfin
+  labels:
+    app: threadfin
+spec:
+  type: ClusterIP
+  selector:
+    app: threadfin
+  ports:
+    - name: http
+      port: 34400
+      targetPort: http
+      protocol: TCP

@@ -1,0 +1,16 @@
+# Threadfin config (settings.json, xepg.json, users, cached playlist/EPG).
+# Playlist/EPG URLs (with provider credentials) are set via the UI and live only here, not in git.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: threadfin-conf
+  namespace: threadfin
+  labels:
+    app: threadfin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 2Gi
