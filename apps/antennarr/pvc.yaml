@@ -1,0 +1,15 @@
+# SQLite appdata must be local storage (upstream: not SMB/NFS). Backups are manual.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: antennarr-data
+  namespace: antennarr
+  labels:
+    app: antennarr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 5Gi

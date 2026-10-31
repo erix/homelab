@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: antennarr
+  namespace: antennarr
+  labels:
+    app: antennarr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: antennarr
+  template:
+    metadata:
+      labels:
+        app: antennarr
+    spec:
+      containers:
+        - name: antennarr
+          # IPTV (Xtream) -> Plex virtual tuner. Beta; pinned by tag+digest, no image automation.
+          # Do not downgrade an upgraded /data directory (schema 8).
+          image: antennarr/antennarr:v1.0.0-beta.4@sha256:55f621f2a22e319de5c4c720528fcbd7a254be4a532af558f2e2741a03548c90
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TZ
+              value: "Europe/Berlin"
+            # Admin UI on its own port (exposed via Traefik); tuner stays cluster-internal.
+            - name: ANTENNARR_ADMIN_LISTEN
+              value: ":9193"
+            # URL Plex uses for the tuner (Plex runs in-cluster, namespace plex).
+            - name: ANTENNARR_BASE_URL
+              value: "http://antennarr.antennarr.svc.cluster.local:9192"
+            # Traefik reaches the pod from the k3s pod CIDR; used to key login rate limits on X-Forwarded-For.
+            - name: ANTENNARR_TRUSTED_PROXIES
+              value: "10.42.0.0/16"
+            - name: ANTENNARR_LOG_LEVEL
+              value: "INFO"
+          ports:
+            - name: tuner
+              containerPort: 9192
+            - name: admin
+              containerPort: 9193
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: tuner
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: tuner
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: antennarr-data

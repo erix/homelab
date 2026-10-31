@@ -26,6 +26,7 @@ resources:
   - meditation-player.yaml
   - remux.yaml
   - remux-image-policy.yaml
+  - antennarr.yaml
   # Network
   - unifi.yaml
   # Tools

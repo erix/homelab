@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: antennarr
+  namespace: antennarr
+  labels:
+    app: antennarr
+spec:
+  type: ClusterIP
+  selector:
+    app: antennarr
+  ports:
+    - name: tuner
+      port: 9192
+      targetPort: tuner
+      protocol: TCP
+    - name: admin
+      port: 9193
+      targetPort: admin
+      protocol: TCP
