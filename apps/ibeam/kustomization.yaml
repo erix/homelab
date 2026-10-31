@@ -8,6 +8,7 @@ resources:
   - ibeam-autologin-rbac.yaml
   - ibeam-autologin.yaml
   - ibeam-keepalive.yaml
+  - ibeam-networkpolicy.yaml
 configMapGenerator:
   - name: ibeam-autologin
     files:

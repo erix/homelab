@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ibeam-restrict
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: ibeam
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+    - from:
+        - ipBlock:
+            cidr: 192.168.11.0/24
+    # Traefik (kube-system) -> ibeam for IngressRoute cp-gateway-ingress (ibkr.erix-homelab.site)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - port: 5000
+          protocol: TCP
