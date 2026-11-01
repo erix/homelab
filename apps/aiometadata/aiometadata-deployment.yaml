@@ -23,6 +23,14 @@ spec:
         ports:
         - containerPort: 3232
           name: http
+        env:
+        - name: JELLYFIN_API_ENABLED
+          value: "true"
+        - name: ADMIN_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: ADMIN_KEY
         envFrom:
         - configMapRef:
             name: aiometadata-config
