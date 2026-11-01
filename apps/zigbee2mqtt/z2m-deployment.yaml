@@ -23,6 +23,10 @@ spec:
       - name: z2m
         image: koenkk/zigbee2mqtt:2.12.1@sha256:80f7f04f72a99e4c4ef51ef7e98ee736edba6db0ecbb7abc626d0c4b0f1871f1
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            # Rank above zero-request pods for kubelet disk-pressure eviction (2026-10-12 incident). No limit.
+            ephemeral-storage: 256Mi
         env:
           - name: TZ
             value: Europe/London
