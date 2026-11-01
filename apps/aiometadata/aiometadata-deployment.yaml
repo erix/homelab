@@ -31,6 +31,20 @@ spec:
             secretKeyRef:
               name: aiometadata-secret
               key: ADMIN_KEY
+        # Simkl AUTH V2 app (Server apps & services). With a V2 secret the default
+        # mode is browser OAuth only; "both" also offers the PIN/code sign-in.
+        - name: SIMKL_V2_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: SIMKL_V2_CLIENT_ID
+        - name: SIMKL_V2_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: SIMKL_V2_CLIENT_SECRET
+        - name: SIMKL_AUTH_MODE
+          value: "both"
         envFrom:
         - configMapRef:
             name: aiometadata-config
