@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openposterdb
+  namespace: stremio
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - openposterdb.erix-homelab.site
+    # Own secret so cert-manager does not contend with aiometadata's
+    # erix-homelab-site-tls Certificate in this namespace.
+    secretName: openposterdb-tls
+  rules:
+  - host: openposterdb.erix-homelab.site
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: openposterdb
+            port:
+              number: 3000

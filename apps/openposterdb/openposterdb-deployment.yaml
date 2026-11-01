@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openposterdb
+  namespace: stremio
+  labels:
+    app: openposterdb
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: openposterdb
+  template:
+    metadata:
+      labels:
+        app: openposterdb
+    spec:
+      containers:
+      - name: openposterdb
+        # Pinned release; no image automation (upstream warns of breaking
+        # schema/cache changes between releases).
+        image: ghcr.io/pnrxa/openposterdb:v1.3.0@sha256:b4bc17a037b5f619c76069e9aeaa07621e4e79bb68a6afa6e09fe50279076d42
+        ports:
+        - containerPort: 3000
+          name: http
+        envFrom:
+        # JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD (admin is seeded on first run only)
+        - secretRef:
+            name: openposterdb-secret
+        env:
+        # Reuse the existing metadata credentials from the aiometadata secret
+        # without copying or exposing their values.
+        - name: TMDB_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: TMDB_API
+        - name: MDBLIST_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: MDBLIST_API_KEY
+        - name: FANART_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: FANART_API_KEY
+        - name: TRAKT_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: aiometadata-secret
+              key: TRAKT_CLIENT_ID
+        - name: LISTEN_ADDR
+          value: "0.0.0.0:3000"
+        - name: CACHE_DIR
+          value: /data/cache
+        - name: DB_DIR
+          value: /data/db
+        - name: STATIC_DIR
+          value: /app/dist
+        - name: COOKIE_SECURE
+          value: "true"
+        - name: DISABLE_PUBLIC_PAGES
+          value: "true"
+        - name: FREE_KEY_ENABLED
+          value: "false"
+        - name: IMAGE_MEM_CACHE_MB
+          value: "256"
+        - name: RUST_LOG
+          value: "warn,openposterdb_api=info"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/auth/status
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 15
+          timeoutSeconds: 5
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /api/auth/status
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: openposterdb-data
