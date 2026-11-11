@@ -20,6 +20,29 @@ spec:
       # The image entrypoint starts as root to create the app user, then
       # drops to USER_ID/GROUP_ID with su-exec.
       initContainers:
+        # Create library/ and bookdrop/ on the TrueNAS dataset, owned by the
+        # app user. setgid + group-write so files dropped over SMB stay
+        # readable and removable by Grimmory.
+        - name: prepare-dirs
+          image: docker.io/grimmory/grimmory:v3.5.0@sha256:bf6fe21c6e247597f7869664a440b5a34242e2d2940575cae39c17bfaa66dc0b
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              mkdir -p /grimmory/library /grimmory/bookdrop
+              chown 1000:1000 /grimmory/library /grimmory/bookdrop
+              chmod 2775 /grimmory/library /grimmory/bookdrop
+          volumeMounts:
+            - name: grimmory-nfs
+              mountPath: /grimmory
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
         # Upstream compose waits for a healthy MariaDB before starting.
         - name: wait-for-mariadb
           image: docker.io/grimmory/grimmory:v3.5.0@sha256:bf6fe21c6e247597f7869664a440b5a34242e2d2940575cae39c17bfaa66dc0b
@@ -95,7 +118,11 @@ spec:
             - name: calibre-library
               mountPath: /books
               readOnly: true
-            - name: bookdrop
+            - name: grimmory-nfs
+              subPath: library
+              mountPath: /library
+            - name: grimmory-nfs
+              subPath: bookdrop
               mountPath: /bookdrop
       volumes:
         - name: data
@@ -105,7 +132,7 @@ spec:
           persistentVolumeClaim:
             claimName: grimmory-calibre-library
             readOnly: true
-        # New books keep going through Calibre's Book_Inbox; Grimmory's
-        # library is read-only, so Bookdrop has nowhere to file books.
-        - name: bookdrop
-          emptyDir: {}
+        # Grimmory-managed library + Bookdrop (TrueNAS tank/grimmory).
+        - name: grimmory-nfs
+          persistentVolumeClaim:
+            claimName: grimmory-nfs
