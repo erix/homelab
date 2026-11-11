@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: curated-tv
+  namespace: curated-tv
+  labels:
+    app: curated-tv
+spec:
+  type: ClusterIP
+  selector:
+    app: curated-tv
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

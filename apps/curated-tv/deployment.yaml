@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: curated-tv
+  namespace: curated-tv
+  labels:
+    app: curated-tv
+spec:
+  replicas: 1
+  # One SQLite database on a RWO volume: two processes must never open it.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: curated-tv
+  template:
+    metadata:
+      labels:
+        app: curated-tv
+    spec:
+      imagePullSecrets:
+        - name: ghcr-credentials
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: curated-tv
+          image: ghcr.io/erix/curated-tv:e89fe92cda16fbb1f72216c216c276db99f4ffe3@sha256:9a936a410cb174fa03dadf04bc6c27732387ed13ed5e34f12e086d77ecaf125e
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: PUBLIC_BASE_URL
+              value: https://curated-tv.erix-homelab.site
+            # Secret keys below are optional so this image (which does not
+            # read them yet) can start before the SealedSecret exists.
+            # After curated-tv #4 lands they become required.
+            - name: GOOGLE_OAUTH_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: curated-tv
+                  key: GOOGLE_OAUTH_CLIENT_ID
+                  optional: true
+            - name: GOOGLE_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: curated-tv
+                  key: GOOGLE_OAUTH_CLIENT_SECRET
+                  optional: true
+            - name: TOKEN_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: curated-tv
+                  key: TOKEN_ENCRYPTION_KEY
+                  optional: true
+            - name: ALLOWED_GOOGLE_SUB
+              valueFrom:
+                secretKeyRef:
+                  name: curated-tv
+                  key: ALLOWED_GOOGLE_SUB
+                  optional: true
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: curated-tv-data
+        - name: tmp
+          emptyDir: {}
