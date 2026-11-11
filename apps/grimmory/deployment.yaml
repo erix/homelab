@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grimmory
+  namespace: grimmory
+  labels:
+    app: grimmory
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: grimmory
+  template:
+    metadata:
+      labels:
+        app: grimmory
+    spec:
+      # The image entrypoint starts as root to create the app user, then
+      # drops to USER_ID/GROUP_ID with su-exec.
+      initContainers:
+        # Upstream compose waits for a healthy MariaDB before starting.
+        - name: wait-for-mariadb
+          image: docker.io/grimmory/grimmory:v3.5.0@sha256:bf6fe21c6e247597f7869664a440b5a34242e2d2940575cae39c17bfaa66dc0b
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - until nc -z -w 2 grimmory-mariadb 3306; do echo waiting for mariadb; sleep 3; done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 64Mi
+      containers:
+        - name: grimmory
+          image: docker.io/grimmory/grimmory:v3.5.0@sha256:bf6fe21c6e247597f7869664a440b5a34242e2d2940575cae39c17bfaa66dc0b
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: USER_ID
+              value: "1000"
+            - name: GROUP_ID
+              value: "1000"
+            - name: TZ
+              value: Europe/Berlin
+            - name: SERVER_PORT
+              value: "6060"
+            - name: ALLOWED_ORIGINS
+              value: https://grimmory.erix-homelab.site
+            - name: DATABASE_URL
+              value: jdbc:mariadb://grimmory-mariadb:3306/grimmory
+            - name: DATABASE_USERNAME
+              value: grimmory
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grimmory-db
+                  key: DATABASE_PASSWORD
+          ports:
+            - name: http
+              containerPort: 6060
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /api/v1/healthcheck
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/v1/healthcheck
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /api/v1/healthcheck
+              port: http
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 768Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+            - name: calibre-library
+              mountPath: /books
+              readOnly: true
+            - name: bookdrop
+              mountPath: /bookdrop
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: grimmory-data
+        - name: calibre-library
+          persistentVolumeClaim:
+            claimName: grimmory-calibre-library
+            readOnly: true
+        # New books keep going through Calibre's Book_Inbox; Grimmory's
+        # library is read-only, so Bookdrop has nowhere to file books.
+        - name: bookdrop
+          emptyDir: {}

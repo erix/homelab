@@ -1,0 +1,93 @@
+# Nightly dump of Grimmory's MariaDB to TrueNAS /mnt/tank/backups/grimmory,
+# keeping the newest 30. Runs as root (the share's Maproot is root), so the
+# folder is created on first run. Grimmory's library itself is the read-only
+# Calibre share and is not backed up here.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grimmory-backup-nfs-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4.1
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grimmory-backup
+  namespace: grimmory
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  volumeName: grimmory-backup-nfs-pv
+  storageClassName: ""
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: grimmory-backup
+  namespace: grimmory
+  annotations:
+    alerts.erix-homelab.site/max-age: 26h
+spec:
+  # UTC, no timeZone (like the other jobs): 01:30 UTC = 02:30 Berlin (winter).
+  schedule: "30 1 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: backup
+              image: docker.io/library/mariadb:11.4.5@sha256:49117dcc565cf51aa57ac5fca59ab31213402ff0eae6ffc13c46a37b938f7e4b
+              imagePullPolicy: IfNotPresent
+              # /bin/sh is dash here, which has no pipefail.
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  dest=/backups/grimmory
+                  mkdir -p "$dest"
+                  rm -f "$dest"/*.partial
+                  file="$dest/grimmory-$(date +%F).sql.gz"
+                  mariadb-dump -h grimmory-mariadb -u root --databases grimmory --single-transaction --routines --triggers | gzip > "$file.partial"
+                  gzip -t "$file.partial"
+                  # A dump cut short still compresses cleanly; only a finished one ends with this line.
+                  zcat "$file.partial" | tail -n 1 | grep -q "Dump completed"
+                  mv "$file.partial" "$file"
+                  ls -t "$dest"/grimmory-*.sql.gz | tail -n +31 | xargs -r rm -f
+                  ls -lh "$file"
+              env:
+                - name: MYSQL_PWD
+                  valueFrom:
+                    secretKeyRef:
+                      name: grimmory-db
+                      key: MYSQL_ROOT_PASSWORD
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: grimmory-backup

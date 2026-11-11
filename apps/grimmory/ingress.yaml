@@ -1,0 +1,28 @@
+# LAN/Tailscale only: resolves via the pihole *.erix-homelab.site wildcard to
+# the Traefik VIP. Not published through the Cloudflare tunnel.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grimmory
+  namespace: grimmory
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - grimmory.erix-homelab.site
+      secretName: grimmory-tls
+  rules:
+    - host: grimmory.erix-homelab.site
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grimmory
+                port:
+                  number: 6060

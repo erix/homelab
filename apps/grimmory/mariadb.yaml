@@ -1,0 +1,88 @@
+# Dedicated MariaDB for Grimmory, as in the upstream compose file
+# (https://grimmory.org/docs/installation/). Kept separate from the shared
+# home-automation MariaDB so Grimmory's Flyway migrations can never affect it.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: grimmory-mariadb
+  namespace: grimmory
+  labels:
+    app: grimmory-mariadb
+spec:
+  serviceName: grimmory-mariadb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grimmory-mariadb
+  template:
+    metadata:
+      labels:
+        app: grimmory-mariadb
+    spec:
+      containers:
+        - name: mariadb
+          image: lscr.io/linuxserver/mariadb:11.4.5@sha256:eef506eab5c5e5aaa3ce6d1237dcfa5742a8dafd9054e668c838fad71b0d1547
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: Europe/Berlin
+            - name: MYSQL_DATABASE
+              value: grimmory
+            - name: MYSQL_USER
+              value: grimmory
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grimmory-db
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grimmory-db
+                  key: DATABASE_PASSWORD
+          ports:
+            - name: mysql
+              containerPort: 3306
+          readinessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: mysql
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: grimmory-mariadb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grimmory-mariadb
+  namespace: grimmory
+  labels:
+    app: grimmory-mariadb
+spec:
+  type: ClusterIP
+  selector:
+    app: grimmory-mariadb
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: mysql
