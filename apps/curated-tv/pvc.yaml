@@ -1,0 +1,17 @@
+# SQLite on local-path (RWO, node-local). Nightly backup is a follow-up:
+# the image has no sqlite3 CLI, and the database filename is pending
+# curated-tv #3. See the PR description.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: curated-tv-data
+  namespace: curated-tv
+  labels:
+    app: curated-tv
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi
