@@ -60,3 +60,38 @@ spec:
       storage: 10Gi
   volumeName: grimmory-calibre-library-ro-pv
   storageClassName: ""
+---
+# Grimmory-managed library and Bookdrop on TrueNAS dataset tank/grimmory
+# (NFS export /mnt/tank/grimmory, Maproot root/wheel). Subfolders:
+#   library/  -> /library   (Grimmory files imported books here)
+#   bookdrop/ -> /bookdrop  (also shared over SMB for drops from the Mac)
+# The dataset and export must exist on TrueNAS before this mounts.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grimmory-nfs-pv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4.1
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/grimmory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grimmory-nfs
+  namespace: grimmory
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  volumeName: grimmory-nfs-pv
+  storageClassName: ""

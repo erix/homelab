@@ -1,7 +1,9 @@
-# Nightly dump of Grimmory's MariaDB to TrueNAS /mnt/tank/backups/grimmory,
-# keeping the newest 30. Runs as root (the share's Maproot is root), so the
-# folder is created on first run. Grimmory's library itself is the read-only
-# Calibre share and is not backed up here.
+# Nightly backup to TrueNAS /mnt/tank/backups/grimmory. Runs as root (the
+# share's Maproot is root), so the folder is created on first run.
+#  - MariaDB dump, newest 30 kept.
+#  - tar.gz of the Grimmory-managed library (tank/grimmory library/), newest
+#    14 kept. Same pool as the source, so also keep a ZFS snapshot task on
+#    tank/grimmory. The Calibre share (/books) is not Grimmory's to back up.
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -72,6 +74,12 @@ spec:
                   mv "$file.partial" "$file"
                   ls -t "$dest"/grimmory-*.sql.gz | tail -n +31 | xargs -r rm -f
                   ls -lh "$file"
+                  lib="$dest/grimmory-library-$(date +%F).tar.gz"
+                  tar -C /grimmory -czf "$lib.partial" library
+                  gzip -t "$lib.partial"
+                  mv "$lib.partial" "$lib"
+                  ls -t "$dest"/grimmory-library-*.tar.gz | tail -n +15 | xargs -r rm -f
+                  ls -lh "$lib"
               env:
                 - name: MYSQL_PWD
                   valueFrom:
@@ -87,7 +95,14 @@ spec:
               volumeMounts:
                 - name: backups
                   mountPath: /backups
+                - name: grimmory-nfs
+                  mountPath: /grimmory
+                  readOnly: true
           volumes:
             - name: backups
               persistentVolumeClaim:
                 claimName: grimmory-backup
+            - name: grimmory-nfs
+              persistentVolumeClaim:
+                claimName: grimmory-nfs
+                readOnly: true
