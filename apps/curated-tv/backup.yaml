@@ -1,0 +1,126 @@
+# Daily SQLite backup to TrueNAS. The destination folder must exist and be
+# owned by uid/gid 1000 before the first run; the cluster cannot create it
+# (see .agents/skills/k3s-homelab-gitops/references/backups-and-alerts.md).
+#
+# The data PVC is local-path RWO and already bound on node-01, so this job
+# is scheduled onto the same node and can co-mount it. The volume is mounted
+# read-write: sqlite3 ".backup" of a WAL database needs to open the -shm
+# file, which fails on a read-only mount.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: curated-tv-backup-nfs-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4.1
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/backups/curated-tv
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: curated-tv-backup
+  namespace: curated-tv
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: curated-tv-backup-nfs-pv
+  storageClassName: ""
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: curated-tv-backup
+  namespace: curated-tv
+  annotations:
+    alerts.erix-homelab.site/max-age: 26h
+spec:
+  # 03:00 Europe/Berlin in winter (UTC+1). Existing jobs (UTC, no timeZone):
+  # 01:00, 01:15, 03:30, 05:30 UTC → 02:00, 02:15, 04:30, 06:30 Berlin.
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+          containers:
+            - name: backup
+              # No image already in this repo ships the sqlite3 CLI (alpine:3.19
+              # is used by other backup jobs but does not include sqlite3, and
+              # this job cannot apk add as uid 1000). keinos/sqlite3 is a small
+              # Alpine image with the CLI; pinned to the linux/amd64 digest.
+              image: docker.io/keinos/sqlite3:3.54.1@sha256:05be636e0ee5be3dfc9c58ddb662f6a02a0fee7b0270de4892c3e6c721036883
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: TZ
+                  value: Europe/Berlin
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -euo pipefail
+                  dest=/backups
+                  src=/data/curated.sqlite
+                  if [ ! -f "$src" ]; then
+                    echo "source database $src does not exist" >&2
+                    exit 1
+                  fi
+                  touch "$dest/.write-test"
+                  rm -f "$dest/.write-test"
+                  rm -f "$dest"/*.partial
+                  file="$dest/curated-tv-$(date +%F).sqlite"
+                  sqlite3 "$src" ".backup $file.partial"
+                  result=$(sqlite3 "$file.partial" "PRAGMA integrity_check;")
+                  if [ "$result" != "ok" ]; then
+                    echo "integrity_check failed: $result" >&2
+                    exit 1
+                  fi
+                  mv "$file.partial" "$file"
+                  ls -t "$dest"/curated-tv-*.sqlite | tail -n +15 | xargs -r rm -f
+                  ls -lh "$file"
+              volumeMounts:
+                - name: data
+                  mountPath: /data
+                - name: backups
+                  mountPath: /backups
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  memory: 64Mi
+                  cpu: 10m
+                limits:
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: curated-tv-data
+            - name: backups
+              persistentVolumeClaim:
+                claimName: curated-tv-backup
+            - name: tmp
+              emptyDir: {}

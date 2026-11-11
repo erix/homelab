@@ -1,6 +1,4 @@
-# SQLite on local-path (RWO, node-local). Nightly backup is a follow-up:
-# the image has no sqlite3 CLI, and the database filename is pending
-# curated-tv #3. See the PR description.
+# SQLite on local-path (RWO, node-local). Nightly sqlite3 .backup is in backup.yaml.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
