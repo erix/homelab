@@ -1,0 +1,62 @@
+# App data (settings, covers, cache) and the dedicated MariaDB both live on
+# node-local SSD. The MariaDB is backed up nightly by backup.yaml.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grimmory-data
+  namespace: grimmory
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grimmory-mariadb
+  namespace: grimmory
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 5Gi
+---
+# The existing Calibre library (the same TrueNAS export that Calibre,
+# Calibre-Web and calibre-inbox-importer use via default/pvc-books-nfs),
+# mounted READ-ONLY so Grimmory can never change books or metadata.db.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: grimmory-calibre-library-ro-pv
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadOnlyMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4.1
+    - ro
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/books
+    readOnly: true
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grimmory-calibre-library
+  namespace: grimmory
+spec:
+  accessModes:
+    - ReadOnlyMany
+  resources:
+    requests:
+      storage: 10Gi
+  volumeName: grimmory-calibre-library-ro-pv
+  storageClassName: ""
