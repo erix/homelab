@@ -1,0 +1,141 @@
+# Nightly backup of /rails/storage to TrueNAS /mnt/tank/backups/shelfarr.
+# The folder must exist, owned 1000:1000 (mode 700: the archive holds the
+# app's secret key base and encryption keys), before the first run; the
+# cluster cannot create it
+# (see .agents/skills/k3s-homelab-gitops/references/backups-and-alerts.md).
+#
+# Each run writes shelfarr-YYYY-MM-DD.tar.gz with storage/ inside: consistent
+# sqlite3 ".backup" copies of every production*.sqlite3 plus every other file
+# (keys, Active Storage). Restore = extract storage/ into the shelfarr-data
+# PVC with the app scaled to 0. Newest 14 kept.
+#
+# The data PVC is local-path RWO on node-01, so this job lands on the same
+# node and co-mounts it, read-write: sqlite3 ".backup" of a WAL database needs
+# to open the -shm file. The Shelfarr image is used because it ships sqlite3;
+# command replaces its entrypoint, so nothing in the app starts.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: shelfarr-backup-nfs-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4.1
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/backups/shelfarr
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shelfarr-backup
+  namespace: shelfarr
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  volumeName: shelfarr-backup-nfs-pv
+  storageClassName: ""
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: shelfarr-backup
+  namespace: shelfarr
+  annotations:
+    alerts.erix-homelab.site/max-age: 26h
+spec:
+  # UTC, no timeZone (like the other jobs): 02:15 UTC = 03:15 Berlin (winter).
+  # Existing: 01:00, 01:15, 01:30, 02:00, 03:30, 05:30 UTC.
+  schedule: "15 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+          containers:
+            - name: backup
+              image: ghcr.io/pedro-revez-silva/shelfarr:2026.11.09.1@sha256:295c122dcaa5a2bcf8a4e487c55957269bec947d63ad7352abc47a5430d81bde
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: TZ
+                  value: Europe/Berlin
+              command:
+                - /bin/bash
+                - -c
+                - |
+                  set -euo pipefail
+                  src=/rails/storage
+                  dest=/backups
+                  if [ ! -f "$src/production.sqlite3" ]; then
+                    echo "source database $src/production.sqlite3 does not exist" >&2
+                    exit 1
+                  fi
+                  touch "$dest/.write-test"
+                  rm -f "$dest/.write-test"
+                  rm -f "$dest"/*.partial
+                  work=$(mktemp -d /tmp/shelfarr-backup.XXXXXX)
+                  mkdir "$work/storage"
+                  # Everything except live SQLite files and startup probes.
+                  cd "$src"
+                  find . -type f ! -name '*.sqlite3' ! -name '*.sqlite3-wal' \
+                    ! -name '*.sqlite3-shm' ! -name '.shelfarr-startup-check.*' \
+                    -exec cp --parents -p {} "$work/storage/" \;
+                  for db in production*.sqlite3; do
+                    sqlite3 "$src/$db" ".backup $work/storage/$db"
+                    result=$(sqlite3 "$work/storage/$db" "PRAGMA integrity_check;")
+                    if [ "$result" != "ok" ]; then
+                      echo "integrity_check failed for $db: $result" >&2
+                      exit 1
+                    fi
+                  done
+                  test -s "$work/storage/.secret_key_base"
+                  test -s "$work/storage/.encryption_keys"
+                  file="$dest/shelfarr-$(date +%F).tar.gz"
+                  tar -C "$work" -czf "$file.partial" storage
+                  gzip -t "$file.partial"
+                  mv "$file.partial" "$file"
+                  ls -t "$dest"/shelfarr-*.tar.gz | tail -n +15 | xargs -r rm -f
+                  ls -lh "$file"
+              volumeMounts:
+                - name: data
+                  mountPath: /rails/storage
+                - name: backups
+                  mountPath: /backups
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  memory: 64Mi
+                  cpu: 10m
+                limits:
+                  memory: 256Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: shelfarr-data
+            - name: backups
+              persistentVolumeClaim:
+                claimName: shelfarr-backup
+            - name: tmp
+              emptyDir: {}
