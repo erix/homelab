@@ -1,0 +1,50 @@
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: flaresolverr
+  namespace: flux-system
+spec:
+  image: ghcr.io/flaresolverr/flaresolverr
+  interval: 1h
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: flaresolverr
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: flaresolverr
+  # Stateless, and Cloudflare challenge fixes ship as 3.x releases, so follow
+  # them automatically; a 4.x major needs a manual bump.
+  filterTags:
+    pattern: "^v(?P<version>3\\.[0-9]+\\.[0-9]+)$"
+    extract: "$version"
+  policy:
+    semver:
+      range: ">=3.5.2 <4.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: flaresolverr
+  namespace: flux-system
+spec:
+  interval: 1h
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        email: fluxcdbot@users.noreply.github.com
+        name: fluxcdbot
+      messageTemplate: "chore: update flaresolverr image"
+    push:
+      branch: main
+  update:
+    path: ./apps/flaresolverr
+    strategy: Setters

@@ -1,0 +1,18 @@
+# Cluster-internal only: FlareSolverr has no authentication, so it gets no
+# ingress. Clients use http://flaresolverr.flaresolverr.svc.cluster.local:8191/v1
+apiVersion: v1
+kind: Service
+metadata:
+  name: flaresolverr
+  namespace: flaresolverr
+  labels:
+    app: flaresolverr
+spec:
+  type: ClusterIP
+  selector:
+    app: flaresolverr
+  ports:
+    - name: http
+      port: 8191
+      targetPort: http
+      protocol: TCP
