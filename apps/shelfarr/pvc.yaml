@@ -1,0 +1,54 @@
+# App data on node-local SSD: the SQLite databases (production*.sqlite3),
+# Active Storage files, and the secret key base and Active Record encryption
+# keys the entrypoint generates on first start (.secret_key_base,
+# .encryption_keys). Settings such as the Grimmory password are encrypted
+# with those keys, so they are part of the nightly backup (backup.yaml).
+# SQLite must stay on local storage, not NFS.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shelfarr-data
+  namespace: shelfarr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path-ssd
+  resources:
+    requests:
+      storage: 5Gi
+---
+# Grimmory's managed library on TrueNAS dataset tank/grimmory (the same
+# export Grimmory mounts as grimmory-nfs, Maproot root/wheel). Only the
+# library/ subfolder is mounted, read-write, at /library: the same path
+# Grimmory sees it at, so Shelfarr's library path check matches. library/
+# is owned 1000:1000 mode 2775 by Grimmory's prepare-dirs initContainer, and
+# Shelfarr runs as 1000:1000.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: shelfarr-grimmory-nfs-pv
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+    - nfsvers=4.1
+  nfs:
+    server: 192.168.1.179
+    path: /mnt/tank/grimmory
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shelfarr-grimmory-nfs
+  namespace: shelfarr
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  volumeName: shelfarr-grimmory-nfs-pv
+  storageClassName: ""

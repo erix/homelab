@@ -27,6 +27,7 @@ resources:
   - meditation-player.yaml
   - curated-tv.yaml
   - grimmory.yaml
+  - shelfarr.yaml
   - remux.yaml
   - remux-image-policy.yaml
   - antennarr.yaml
